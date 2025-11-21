@@ -1,3 +1,3 @@
 """
-Google API services
+Google Services Package
 """

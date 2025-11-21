@@ -1,5 +1,3 @@
 """
-Chronus AI - Personal AI Assistant
+Chronus AI Application Package
 """
-
-__version__ = "1.0.0"
