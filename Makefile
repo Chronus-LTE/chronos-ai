@@ -50,9 +50,6 @@ test: ## Run tests
 test-cov: ## Run tests with coverage
 	docker-compose exec api pytest --cov=app tests/
 
-test-auth: ## Test Google OAuth flow
-	python tests/test_auth.py
-
 format: ## Format code with Black
 	docker-compose exec api black app/
 

@@ -1,3 +1,3 @@
 """
-AI Services Package
+AI services (Gemini, Embeddings)
 """
