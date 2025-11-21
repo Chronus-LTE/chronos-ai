@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Chronus AI</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container dashboard-container">
+        <div class="card">
+            <div class="profile-header">
+                <div class="profile-avatar" id="avatar">
+                    <!-- Initials or Image -->
+                </div>
+                <div class="profile-info">
+                    <h2 id="userName">Loading...</h2>
+                    <p id="userEmail">...</p>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">User ID</div>
+                    <div class="info-value" id="userId">-</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Status</div>
+                    <div class="info-value" style="color: var(--success-color)">Active</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Verified</div>
+                    <div class="info-value" id="userVerified">-</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Last Login</div>
+                    <div class="info-value" id="lastLogin">-</div>
+                </div>
+            </div>
+
+            <button onclick="logout()" class="btn btn-primary" style="background-color: #ef4444;">Sign Out</button>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        checkAuth();
+
+        async function loadProfile() {
+            const user = await getProfile();
+            if (!user) return;
+
+            document.getElementById('userName').textContent = user.full_name || 'User';
+            document.getElementById('userEmail').textContent = user.email;
+            document.getElementById('userId').textContent = user.id;
+            document.getElementById('userVerified').textContent = user.is_verified ? 'Yes' : 'No';
+
+            if (user.last_login) {
+                document.getElementById('lastLogin').textContent = new Date(user.last_login).toLocaleString();
+            }
+
+            const avatar = document.getElementById('avatar');
+            if (user.picture) {
+                avatar.innerHTML = `<img src="${user.picture}" alt="Profile">`;
+            } else {
+                const initials = (user.full_name || user.email).substring(0, 2).toUpperCase();
+                avatar.textContent = initials;
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+
+</html>
