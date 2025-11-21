@@ -1,14 +1,12 @@
 """
 Alembic environment configuration for async SQLAlchemy
 """
-import asyncio
 from logging.config import fileConfig
-
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
 from alembic import context
+import asyncio
 
 # Import your models and config
 from app.config import settings

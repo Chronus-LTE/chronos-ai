@@ -1,11 +1,17 @@
 # 🤖 Chronus AI - Your Personal AI Assistant
 
-## **Chronus AI** is an intelligent personal assistant that helps you manage your calendar, tasks, and emails using AI-powered automation and proactive suggestions.
+**Chronus AI** is an intelligent personal assistant that helps you manage your calendar, tasks, and emails using AI-powered automation and proactive suggestions.
+
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
 
 ## ✨ Features
 
 ### 📅 Calendar Integration
-
 - Sync with Google Calendar
 - Smart event reminders (5-10 minutes before)
 - Analyze free time slots for side projects
@@ -13,7 +19,6 @@
 - Conflict detection and overload warnings
 
 ### ✅ Task Management
-
 - Integration with Google Tasks
 - Voice and chat-based task creation
 - Priority management by deadline and project
@@ -21,21 +26,18 @@
 - Daily task overview with priorities
 
 ### 📧 Email Intelligence
-
 - Gmail integration (read-only + labels)
 - Daily email digest (important & unread)
 - Auto-extract action items from emails
 - Follow-up reminders for unanswered emails
 
 ### 🧠 Memory & Habits
-
 - Learn your preferences and habits
 - Track weekly/monthly progress
 - Context-aware suggestions
 - Semantic search across tasks and emails
 
 ### 🎯 Proactive Suggestions
-
 - Smart scheduling recommendations
 - Workload balancing
 - Habit tracking and reminders
@@ -45,7 +47,6 @@
 ## 🏗️ Tech Stack
 
 ### Backend
-
 - **Python 3.11+** - Core language
 - **FastAPI** - Modern async web framework
 - **SQLAlchemy** - ORM for PostgreSQL
@@ -54,13 +55,11 @@
 - **Celery** - Background task processing
 
 ### AI & Vector Database
-
 - **Google Gemini API** - Large Language Model
 - **Qdrant** - Vector database for semantic search
 - **sentence-transformers** - Text embeddings
 
 ### Integrations
-
 - **Google Calendar API**
 - **Google Tasks API**
 - **Gmail API**
@@ -70,7 +69,6 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-
 - **Docker & Docker Compose** (Required)
 - Google Cloud Project with APIs enabled
 - Gemini API key
@@ -165,13 +163,13 @@ chronus-ai/
 
 ## 📚 Documentation
 
-| Document                                  | Description                                             |
-| ----------------------------------------- | ------------------------------------------------------- |
-| [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md)   | **⭐ Complete Docker guide** - All commands & workflows |
-| [QUICKSTART.md](docs/QUICKSTART.md)       | Quick setup guide with step-by-step instructions        |
-| [TECH_STACK.md](docs/TECH_STACK.md)       | Detailed tech stack and architecture decisions          |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md)   | System architecture diagrams and data flows             |
-| [PROJECT_SETUP.md](docs/PROJECT_SETUP.md) | Setup completion summary and quick reference            |
+| Document | Description |
+|----------|-------------|
+| [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md) | **⭐ Complete Docker guide** - All commands & workflows |
+| [QUICKSTART.md](docs/QUICKSTART.md) | Quick setup guide with step-by-step instructions |
+| [TECH_STACK.md](docs/TECH_STACK.md) | Detailed tech stack and architecture decisions |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture diagrams and data flows |
+| [PROJECT_SETUP.md](docs/PROJECT_SETUP.md) | Setup completion summary and quick reference |
 
 ---
 
@@ -232,15 +230,15 @@ See [Makefile](Makefile) for all available commands.
 
 Your `docker-compose.yml` includes:
 
-| Service           | Port | Description            |
-| ----------------- | ---- | ---------------------- |
-| **postgres**      | 5432 | PostgreSQL database    |
-| **redis**         | 6379 | Redis cache & queue    |
-| **qdrant**        | 6333 | Vector database        |
-| **api**           | 8000 | FastAPI application    |
-| **celery-worker** | -    | Background task worker |
-| **celery-beat**   | -    | Task scheduler         |
-| **flower**        | 5555 | Celery monitoring      |
+| Service | Port | Description |
+|---------|------|-------------|
+| **postgres** | 5432 | PostgreSQL database |
+| **redis** | 6379 | Redis cache & queue |
+| **qdrant** | 6333 | Vector database |
+| **api** | 8000 | FastAPI application |
+| **celery-worker** | - | Background task worker |
+| **celery-beat** | - | Task scheduler |
+| **flower** | 5555 | Celery monitoring |
 
 ```bash
 # Start all services
@@ -263,12 +261,10 @@ docker-compose down
 ### Google Cloud Setup
 
 1. **Create a Google Cloud Project**
-
    - Go to [Google Cloud Console](https://console.cloud.google.com/)
    - Create a new project
 
 2. **Enable APIs**
-
    - Google Calendar API
    - Google Tasks API
    - Gmail API
@@ -320,7 +316,6 @@ docker-compose exec api pytest tests/test_main.py
 ## 🛣️ Roadmap
 
 ### Phase 1: MVP ✅
-
 - [x] Project setup
 - [x] Docker configuration
 - [ ] Google Calendar integration
@@ -330,14 +325,12 @@ docker-compose exec api pytest tests/test_main.py
 - [ ] Vector store for memory
 
 ### Phase 2: Intelligence
-
 - [ ] Proactive suggestions
 - [ ] Habit tracking
 - [ ] Email intelligence
 - [ ] Smart scheduling
 
 ### Phase 3: Advanced
-
 - [ ] Voice interface
 - [ ] Mobile app
 - [ ] Self-hosting option
@@ -348,7 +341,6 @@ docker-compose exec api pytest tests/test_main.py
 ## 🐛 Troubleshooting
 
 ### Services won't start?
-
 ```bash
 # Check Docker is running
 docker info
@@ -361,7 +353,6 @@ make restart
 ```
 
 ### Port already in use?
-
 ```bash
 # Find process using port
 lsof -i :8000
@@ -371,7 +362,6 @@ kill -9 <PID>
 ```
 
 ### Database connection error?
-
 ```bash
 # Restart PostgreSQL
 docker-compose restart postgres
@@ -381,7 +371,6 @@ docker-compose logs postgres
 ```
 
 ### Need fresh start?
-
 ```bash
 # Remove everything including data
 make clean
@@ -415,7 +404,6 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 👤 Author
 
 **Huy Phan**
-**Hoang Nguyen**
 
 ---
 
@@ -431,7 +419,6 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 📞 Support
 
 For issues and questions:
-
 - 📖 Check [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md)
 - 🐛 Open an issue on GitHub
 - 💬 Start a discussion
