@@ -26,6 +26,8 @@ def upgrade() -> None:
         sa.Column('picture', sa.String(), nullable=True),
         sa.Column('hashed_password', sa.String(), nullable=True),
         sa.Column('google_id', sa.String(), nullable=True),
+        sa.Column('google_access_token', sa.String(), nullable=True),
+        sa.Column('google_refresh_token', sa.String(), nullable=True),
         sa.Column('is_active', sa.Boolean(), nullable=True, server_default='true'),
         sa.Column('is_verified', sa.Boolean(), nullable=True, server_default='false'),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),

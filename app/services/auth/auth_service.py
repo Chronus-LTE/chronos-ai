@@ -19,12 +19,15 @@ class AuthService:
     """Service for handling authentication operations."""
 
     @staticmethod
-    async def get_google_user_info(access_token: str) -> GoogleUserInfo | None:
+    async def get_google_user_info(
+        access_token: str, refresh_token: str | None = None
+    ) -> GoogleUserInfo | None:
         """
         Get user information from Google using access token.
 
         Args:
             access_token: Google OAuth access token
+            refresh_token: Google OAuth refresh token
 
         Returns:
             GoogleUserInfo if successful, None otherwise
@@ -38,6 +41,11 @@ class AuthService:
 
                 if response.status_code == 200:
                     user_data = response.json()
+                    # Add tokens to user data
+                    user_data["access_token"] = access_token
+                    user_data["refresh_token"] = refresh_token
+                    # Note: Refresh token is only returned on first consent or if access_type=offline
+                    # We need to pass it from the flow credentials if available
                     return GoogleUserInfo(**user_data)
 
                 return None
@@ -91,6 +99,10 @@ class AuthService:
             user.last_login = datetime.now(timezone.utc)
             if google_user_info.picture:
                 user.picture = google_user_info.picture
+            if google_user_info.access_token:
+                user.google_access_token = google_user_info.access_token
+            if google_user_info.refresh_token:
+                user.google_refresh_token = google_user_info.refresh_token
             await db.commit()
             await db.refresh(user)
             return user
@@ -105,6 +117,10 @@ class AuthService:
             user.last_login = datetime.now(timezone.utc)
             if google_user_info.picture:
                 user.picture = google_user_info.picture
+            if google_user_info.access_token:
+                user.google_access_token = google_user_info.access_token
+            if google_user_info.refresh_token:
+                user.google_refresh_token = google_user_info.refresh_token
             await db.commit()
             await db.refresh(user)
             return user
