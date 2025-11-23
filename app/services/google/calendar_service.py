@@ -36,21 +36,25 @@ class GoogleCalendarService:
         start_time: datetime,
         end_time: datetime | None = None,
         description: str | None = None,
+        is_task: bool = False,
     ):
         """
-        Create a new calendar event.
+        Create a new calendar event or task.
 
         Args:
             summary: Event title
             start_time: Start datetime
             end_time: End datetime (default: start_time + 1 hour)
             description: Event description
+            is_task: Whether this is a task (vs event)
 
         Returns:
             Created event object
         """
         if end_time is None:
-            end_time = start_time + timedelta(hours=1)
+            # Tasks default to 30 mins, Events to 1 hour
+            duration = timedelta(minutes=30) if is_task else timedelta(hours=1)
+            end_time = start_time + duration
 
         event = {
             "summary": summary,
@@ -63,16 +67,22 @@ class GoogleCalendarService:
                 "dateTime": end_time.isoformat(),
                 "timeZone": settings.TIMEZONE,
             },
+            "extendedProperties": {"private": {"type": "task" if is_task else "event"}},
         }
+
+        # Set color for tasks (e.g., "11" is Tomato/Red, default is usually Blue)
+        if is_task:
+            event["colorId"] = "11"
 
         return self.service.events().insert(calendarId="primary", body=event).execute()
 
-    def list_events(self, max_results: int = 10):
+    def list_events(self, max_results: int = 20, event_type: str | None = None):
         """
         List upcoming events.
 
         Args:
             max_results: Maximum number of events to return
+            event_type: Filter by type ('task' or 'event'), None for all
 
         Returns:
             List of events
@@ -89,7 +99,18 @@ class GoogleCalendarService:
             )
             .execute()
         )
-        return events_result.get("items", [])
+        items = events_result.get("items", [])
+
+        if event_type:
+            filtered_items = []
+            for item in items:
+                props = item.get("extendedProperties", {}).get("private", {})
+                item_type = props.get("type", "event")  # Default to event if no prop
+                if item_type == event_type:
+                    filtered_items.append(item)
+            return filtered_items
+
+        return items
 
     def get_event(self, event_id: str):
         """

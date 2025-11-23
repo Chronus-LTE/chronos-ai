@@ -20,12 +20,16 @@
 - Sync tasks with calendar
 - Daily task overview with priorities
 
-### 📧 Email Intelligence
+### 📧 Email Intelligence ✅
 
-- Gmail integration (read-only + labels)
-- Daily email digest (important & unread)
-- Auto-extract action items from emails
-- Follow-up reminders for unanswered emails
+- **Gmail integration** (read, send, search, manage)
+- Read and list emails with natural language
+- Search emails using Gmail search syntax
+- Send emails through AI agent or API
+- Mark emails as read/unread
+- Get unread count and email summaries
+- Auto-extract action items from emails (coming soon)
+- Follow-up reminders for unanswered emails (coming soon)
 
 ### 🧠 Memory & Habits
 
@@ -165,13 +169,14 @@ chronus-ai/
 
 ## 📚 Documentation
 
-| Document                                  | Description                                             |
-| ----------------------------------------- | ------------------------------------------------------- |
-| [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md)   | **⭐ Complete Docker guide** - All commands & workflows |
-| [QUICKSTART.md](docs/QUICKSTART.md)       | Quick setup guide with step-by-step instructions        |
-| [TECH_STACK.md](docs/TECH_STACK.md)       | Detailed tech stack and architecture decisions          |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md)   | System architecture diagrams and data flows             |
-| [PROJECT_SETUP.md](docs/PROJECT_SETUP.md) | Setup completion summary and quick reference            |
+| Document                                          | Description                                             |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md)           | **⭐ Complete Docker guide** - All commands & workflows |
+| [GMAIL_INTEGRATION.md](docs/GMAIL_INTEGRATION.md) | **📧 Gmail Integration** - API endpoints & AI usage     |
+| [QUICKSTART.md](docs/QUICKSTART.md)               | Quick setup guide with step-by-step instructions        |
+| [TECH_STACK.md](docs/TECH_STACK.md)               | Detailed tech stack and architecture decisions          |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md)           | System architecture diagrams and data flows             |
+| [PROJECT_SETUP.md](docs/PROJECT_SETUP.md)         | Setup completion summary and quick reference            |
 
 ---
 
@@ -323,9 +328,9 @@ docker-compose exec api pytest tests/test_main.py
 
 - [x] Project setup
 - [x] Docker configuration
-- [ ] Google Calendar integration
+- [x] Google Calendar integration
+- [x] Gmail integration (read, send, search, manage)
 - [ ] Google Tasks integration
-- [ ] Gmail integration
 - [ ] Basic AI chat with Gemini
 - [ ] Vector store for memory
 

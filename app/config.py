@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
 
+    @property
+    def qdrant_url(self) -> str:
+        """Get Qdrant URL."""
+        return f"http://{self.QDRANT_HOST}:{self.QDRANT_PORT}"
+
 
 # Global settings instance
 settings = Settings()
