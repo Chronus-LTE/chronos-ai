@@ -77,6 +77,8 @@ class UserService:
             full_name=google_user_info.name,
             picture=google_user_info.picture,
             google_id=google_user_info.id,
+            google_access_token=google_user_info.access_token,
+            google_refresh_token=google_user_info.refresh_token,
             is_verified=google_user_info.verified_email,
             is_active=True,
             last_login=datetime.now(timezone.utc),

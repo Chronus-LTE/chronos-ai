@@ -21,6 +21,8 @@ class User(Base):
 
     # OAuth fields
     google_id = Column(String, unique=True, nullable=True, index=True)
+    google_access_token = Column(String, nullable=True)
+    google_refresh_token = Column(String, nullable=True)
 
     # Account status
     is_active = Column(Boolean, default=True)

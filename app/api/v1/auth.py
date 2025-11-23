@@ -38,6 +38,7 @@ SCOPES = [
     "openid",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/calendar",
 ]
 
 
@@ -200,7 +201,9 @@ async def google_callback(request: Request, code: str, db: AsyncSession = Depend
         credentials = flow.credentials
 
         # Get user info from Google
-        google_user_info = await AuthService.get_google_user_info(credentials.token)
+        google_user_info = await AuthService.get_google_user_info(
+            credentials.token, credentials.refresh_token
+        )
 
         if not google_user_info:
             raise HTTPException(

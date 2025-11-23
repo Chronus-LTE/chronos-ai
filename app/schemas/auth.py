@@ -81,3 +81,5 @@ class GoogleUserInfo(BaseModel):
     family_name: str | None = None
     picture: str | None = None
     locale: str | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
