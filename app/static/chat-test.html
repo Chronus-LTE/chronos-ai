@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat History Test - Chronus AI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .chat-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+        }
+
+        .test-section h3 {
+            color: #4285F4;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .test-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-btn.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .test-btn.danger {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #c62828;
+        }
+
+        .conversation-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .conversation-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .conversation-card.active {
+            border-left: 4px solid #4285F4;
+            background-color: #f8f9fa;
+        }
+
+        .conversation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .conversation-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .conversation-time {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .message-bubble {
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        .message-user {
+            background-color: #e3f2fd;
+            margin-left: auto;
+            color: #1565c0;
+        }
+
+        .message-assistant {
+            background-color: #f5f5f5;
+            margin-right: auto;
+            color: #333;
+        }
+
+        .message-system {
+            background-color: #fff3e0;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 12px;
+            color: #ef6c00;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: 600px;
+        }
+
+        .sidebar {
+            border-right: 1px solid #eee;
+            padding-right: 20px;
+            overflow-y: auto;
+        }
+
+        .main-chat {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4285F4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h1 style="margin: 0;">💬 Chat History & Vector DB Test</h1>
+                    <p style="color: #666; margin: 5px 0 0 0;">Test conversation history and semantic search</p>
+                </div>
+                <button onclick="window.location.href='/static/dashboard.html'" class="btn btn-primary">
+                    ← Back to Dashboard
+                </button>
+            </div>
+
+            <div class="layout-grid">
+                <!-- Sidebar: Conversation List -->
+                <div class="sidebar">
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Semantic Search..."
+                            onkeypress="if(event.key === 'Enter') searchConversations()">
+                        <div class="test-buttons" style="justify-content: space-between;">
+                            <button class="test-btn secondary" style="font-size: 12px; padding: 5px 10px;"
+                                onclick="loadConversations()">Refresh</button>
+                            <button class="test-btn" style="font-size: 12px; padding: 5px 10px;"
+                                onclick="createNewChat()">+ New Chat</button>
+                        </div>
+                    </div>
+                    <div id="conversationList">
+                        <!-- Conversations will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Main Chat Area -->
+                <div class="main-chat">
+                    <div id="chatWindow" class="chat-window">
+                        <div style="text-align: center; color: #999; margin-top: 100px;">
+                            Select a conversation to view history
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="messageInput" class="form-control" placeholder="Type a message..."
+                            style="margin-bottom: 0;">
+                        <button class="test-btn success" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vector DB Debug Info -->
+            <div class="test-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <h3>🧠 Vector DB Context Debug</h3>
+                <p style="color: #666; font-size: 14px;">See what context is retrieved from Vector DB for your last
+                    query.</p>
+                <div id="vectorContext"
+                    style="background: #f8f9fa; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap;">
+                    Context will appear here after you send a message...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        checkAuth();
+
+        let currentConversationId = null;
+
+        // Mock API calls (Replace with actual endpoints when available)
+        // Since we don't have dedicated chat history endpoints exposed in main.py yet,
+        // we will use the main chat endpoint and simulate history for now,
+        // OR we can implement the missing endpoints.
+        // Assuming we will implement:
+        // GET /api/v1/chat/history/conversations
+        // GET /api/v1/chat/history/{conversation_id}
+        // GET /api/v1/chat/search?q=...
+
+        // For now, we'll use the existing /api/v1/chat/ endpoint which handles state internally
+        // but to visualize history properly we might need to expose the ChatHistoryService via API.
+
+        // Let's assume we added these endpoints. If not, this test page will fail until we do.
+        // I will add the necessary endpoints to app/api/v1/chat.py in the next step.
+
+        const API_BASE = '/api/v1/chat';
+
+        async function apiCall(endpoint, options = {}) {
+            const token = localStorage.getItem('token');
+            const response = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'API Error');
+            }
+
+            return response.json();
+        }
+
+        async function loadConversations() {
+            const container = document.getElementById('conversationList');
+            container.innerHTML = '<div class="loading"></div>';
+
+            try {
+                // TODO: Implement this endpoint
+                const data = await apiCall(`${API_BASE}/history/conversations`);
+
+                container.innerHTML = '';
+                if (data.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: #999;">No conversations yet</div>';
+                    return;
+                }
+
+                data.forEach(conv => {
+                    const card = document.createElement('div');
+                    card.className = `conversation-card ${currentConversationId === conv.id ? 'active' : ''}`;
+                    card.onclick = () => loadChatHistory(conv.id);
+                    card.innerHTML = `
+                        <div class="conversation-header">
+                            <div class="conversation-title">${escapeHtml(conv.title || 'New Conversation')}</div>
+                            <div class="conversation-time">${new Date(conv.updated_at).toLocaleDateString()}</div>
+                        </div>
+                        <div style="font-size: 12px; color: #666;">ID: ${conv.id}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                container.innerHTML = `<div class="error" style="font-size: 12px;">Error loading list: ${error.message}</div>`;
+            }
+        }
+
+        async function loadChatHistory(conversationId) {
+            currentConversationId = conversationId;
+            const container = document.getElementById('chatWindow');
+            container.innerHTML = '<div class="loading"></div>';
+
+            // Update active state in sidebar
+            document.querySelectorAll('.conversation-card').forEach(c => c.classList.remove('active'));
+            // Re-render list to show active state (simplified)
+            loadConversations();
+
+            try {
+                // TODO: Implement this endpoint
+                const messages = await apiCall(`${API_BASE}/history/${conversationId}`);
+
+                container.innerHTML = '';
+                messages.forEach(msg => {
+                    appendMessage(msg.role, msg.content);
+                });
+
+                // Scroll to bottom
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error loading history: ${error.message}</div>`;
+            }
+        }
+
+        async function searchConversations() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) return loadConversations();
+
+            const container = document.getElementById('conversationList');
+            container.innerHTML = '<div class="loading"></div> Searching...';
+
+            try {
+                // TODO: Implement this endpoint
+                const data = await apiCall(`${API_BASE}/history/search?query=${encodeURIComponent(query)}`);
+
+                container.innerHTML = `<div style="padding-bottom: 10px; font-size: 12px; color: #666;">Found ${data.length} results</div>`;
+
+                data.forEach(conv => {
+                    const card = document.createElement('div');
+                    card.className = 'conversation-card';
+                    card.onclick = () => loadChatHistory(conv.id);
+                    card.innerHTML = `
+                        <div class="conversation-header">
+                            <div class="conversation-title">${escapeHtml(conv.title)}</div>
+                        </div>
+                        <div style="font-size: 12px; color: #666;">Match Score: ${(conv.score || 0).toFixed(2)}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                container.innerHTML = `<div class="error">Search failed: ${error.message}</div>`;
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Optimistic UI update
+            appendMessage('user', message);
+            input.value = '';
+
+            try {
+                const payload = { message };
+                if (currentConversationId) {
+                    payload.conversation_id = currentConversationId;
+                }
+
+                const response = await apiCall(`${API_BASE}/`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                appendMessage('assistant', response.response);
+
+                // Update vector context debug info if available
+                if (response.context) {
+                    document.getElementById('vectorContext').textContent = JSON.stringify(response.context, null, 2);
+                }
+
+                // Refresh conversation list if it was a new chat
+                if (!currentConversationId) {
+                    loadConversations();
+                    // Ideally we'd switch to the new ID here
+                }
+            } catch (error) {
+                appendMessage('system', `Error: ${error.message}`);
+            }
+        }
+
+        function appendMessage(role, content) {
+            const container = document.getElementById('chatWindow');
+            const div = document.createElement('div');
+            div.className = `message-bubble message-${role}`;
+            div.textContent = content;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function createNewChat() {
+            currentConversationId = null;
+            document.getElementById('chatWindow').innerHTML = '<div style="text-align: center; color: #999; margin-top: 100px;">Start a new conversation</div>';
+            document.querySelectorAll('.conversation-card').forEach(c => c.classList.remove('active'));
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initial load
+        loadConversations();
+    </script>
+</body>
+
+</html>

@@ -6,6 +6,7 @@ from typing import ClassVar
 
 from app.services.tools.base import BaseToolSet
 from app.services.tools.google.calendar import GoogleCalendarToolSet
+from app.services.tools.google.gmail import GoogleGmailToolSet
 
 
 class ToolRegistry:
@@ -13,6 +14,7 @@ class ToolRegistry:
 
     _tools: ClassVar[dict[str, type[BaseToolSet]]] = {
         "google_calendar": GoogleCalendarToolSet,
+        "google_gmail": GoogleGmailToolSet,
     }
 
     @classmethod

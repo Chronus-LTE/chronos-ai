@@ -17,40 +17,43 @@ services:
     networks:
       - chronus-network
 
-  # Redis Cache & Queue
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: chronus-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   networks:
-  #     - chronus-network
+  # Redis Cache & Queue (REQUIRED for Celery)
+  redis:
+    image: redis:7-alpine
+    container_name: chronus-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chronus-network
+    restart: unless-stopped
 
-  # # Qdrant Vector Database
-  # qdrant:
-  #   image: qdrant/qdrant:latest
-  #   container_name: chronus-qdrant
-  #   ports:
-  #     - "6333:6333"
-  #     - "6334:6334"
-  #   volumes:
-  #     - qdrant_data:/qdrant/storage
-  #   env_file:
-  #     - .env
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   networks:
-  #     - chronus-network
+  # Qdrant Vector Database (Optional - for future semantic search)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: chronus-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    env_file:
+      - .env
+    # Temporarily disable health check to debug
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    networks:
+      - chronus-network
+    restart: unless-stopped
 
   # FastAPI Application
   api:
@@ -69,75 +72,79 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      # redis:
-      #   condition: service_healthy
+      redis:
+        condition: service_healthy
+      # Temporarily disable qdrant dependency for debugging
       # qdrant:
       #   condition: service_healthy
     networks:
       - chronus-network
     restart: unless-stopped
 
-  # Celery Worker
-  # celery-worker:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: chronus-celery-worker
-  #   command: celery -A app.tasks.celery_app worker --loglevel=info
-  #   volumes:
-  #     - .:/app
-  #     - /app/venv
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - redis
-  #     - postgres
-  #     - qdrant
-  #   networks:
-  #     - chronus-network
-  #   restart: unless-stopped
+  # Celery Worker (REQUIRED for Proactive Analysis)
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chronus-celery-worker
+    command: celery -A app.tasks worker --loglevel=info
+    volumes:
+      - .:/app
+      - /app/venv
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - chronus-network
+    restart: unless-stopped
 
-  # # Celery Beat (Scheduler)
-  # celery-beat:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: chronus-celery-beat
-  #   command: celery -A app.tasks.celery_app beat --loglevel=info
-  #   volumes:
-  #     - .:/app
-  #     - /app/venv
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - redis
-  #     - postgres
-  #   networks:
-  #     - chronus-network
-  #   restart: unless-stopped
+  # Celery Beat (REQUIRED for Scheduled Tasks - Daily Analysis)
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chronus-celery-beat
+    command: celery -A app.tasks beat --loglevel=info
+    volumes:
+      - .:/app
+      - /app/venv
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - chronus-network
+    restart: unless-stopped
 
-  # # Flower (Celery Monitoring)
-  # flower:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: chronus-flower
-  #   command: celery -A app.tasks.celery_app flower --port=5555
-  #   ports:
-  #     - "5555:5555"
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - redis
-  #     - celery-worker
-  #   networks:
-  #     - chronus-network
-  #   restart: unless-stopped
+  # Flower (Celery Monitoring - Optional but recommended)
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chronus-flower
+    command: celery -A app.tasks flower --port=5555
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - chronus-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-  # redis_data:
-  # qdrant_data:
+  redis_data:
+  qdrant_data:
 
 networks:
   chronus-network:
