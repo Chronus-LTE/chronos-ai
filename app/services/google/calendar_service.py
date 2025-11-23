@@ -90,3 +90,73 @@ class GoogleCalendarService:
             .execute()
         )
         return events_result.get("items", [])
+
+    def get_event(self, event_id: str):
+        """
+        Get a specific event by ID.
+
+        Args:
+            event_id: Event ID
+
+        Returns:
+            Event object
+        """
+        return self.service.events().get(calendarId="primary", eventId=event_id).execute()
+
+    def update_event(
+        self,
+        event_id: str,
+        summary: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        description: str | None = None,
+    ):
+        """
+        Update an existing calendar event.
+
+        Args:
+            event_id: Event ID to update
+            summary: New event title (optional)
+            start_time: New start datetime (optional)
+            end_time: New end datetime (optional)
+            description: New event description (optional)
+
+        Returns:
+            Updated event object
+        """
+        # Get existing event
+        event = self.get_event(event_id)
+
+        # Update fields if provided
+        if summary is not None:
+            event["summary"] = summary
+        if description is not None:
+            event["description"] = description
+        if start_time is not None:
+            event["start"] = {
+                "dateTime": start_time.isoformat(),
+                "timeZone": settings.TIMEZONE,
+            }
+        if end_time is not None:
+            event["end"] = {
+                "dateTime": end_time.isoformat(),
+                "timeZone": settings.TIMEZONE,
+            }
+
+        return (
+            self.service.events()
+            .update(calendarId="primary", eventId=event_id, body=event)
+            .execute()
+        )
+
+    def delete_event(self, event_id: str):
+        """
+        Delete a calendar event.
+
+        Args:
+            event_id: Event ID to delete
+
+        Returns:
+            None
+        """
+        self.service.events().delete(calendarId="primary", eventId=event_id).execute()

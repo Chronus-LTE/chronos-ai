@@ -2,6 +2,7 @@
 AI Agent Service using LangChain and Google Gemini.
 """
 
+import traceback
 from datetime import datetime
 
 from langchain.agents import AgentExecutor, create_react_agent
@@ -29,7 +30,7 @@ class AIAgentService:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
             google_api_key=settings.GEMINI_API_KEY,
-            temperature=0.7,
+            temperature=0.3,
             convert_system_message_to_human=True,
         )
         self.tools = self._setup_tools()
@@ -52,34 +53,38 @@ class AIAgentService:
     def _setup_agent(self) -> AgentExecutor:
         """Setup the ReAct agent."""
 
-        template = """Answer the following questions as best you can. You have access to the following tools:
+        template = """You are a helpful AI assistant with access to tools. Answer questions and help with tasks.
 
+Available tools:
 {tools}
 
-Use the following format:
+Use this EXACT format for your responses:
 
 Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
+Thought: think about what to do
+Action: the action to take, must be one of [{tool_names}]
 Action Input: the input to the action
 Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
+... (repeat Thought/Action/Action Input/Observation as needed)
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
-IMPORTANT CONTEXT:
-- Current time is {current_time}.
-- This is part of a conversation. Remember what you asked the user previously and use their responses to fill in missing information.
+CRITICAL FORMATTING RULES:
+- ALWAYS start with "Thought:" after seeing a Question
+- ALWAYS use "Action:" and "Action Input:" on separate lines
+- NEVER skip the "Final Answer:" line
+- If you don't need tools, go straight to "Final Answer:"
 
-IMPORTANT RULES FOR SCHEDULING:
-1. When user mentions relative time like "tomorrow at 5pm", calculate the ISO datetime based on current time.
-2. Be SMART about what information is missing:
-   - If user provides BOTH event name AND date/time (e.g., "schedule dinner tomorrow"), only ask for missing details (time if not specified, location if relevant).
-   - If user is vague (e.g., "schedule something"), ask for ALL missing details: What? When? Where?
-   - When user responds to your clarifying questions, ACCEPT their answer and use it to complete the task.
-   - Only ask for information that is truly needed - don't be overly strict.
-3. Ask for clarification only on information that is genuinely missing or unclear.
-4. Combine clarifying questions into ONE message, not multiple separate questions.
+CONTEXT:
+- Current time: {current_time}
+- Timezone: Asia/Ho_Chi_Minh (UTC+7)
+
+SCHEDULING RULES:
+1. When user mentions relative time (e.g., "tomorrow at 5pm"), calculate ISO datetime from current time
+2. Be smart about missing information - only ask what's truly needed
+3. When user responds to your questions, USE their answer to complete the task
+4. Combine multiple questions into ONE message
+5. When scheduling with "break time", add at least 30 minutes between meetings
 
 {history}
 
@@ -92,8 +97,21 @@ Thought:{agent_scratchpad}"""
 
         agent = create_react_agent(self.llm, self.tools, prompt)
 
+        def _handle_error(error) -> str:
+            """Handle parsing errors gracefully."""
+            error_str = str(error)
+            if "Could not parse LLM output" in error_str:
+                return "I apologize, I had trouble formatting my response. Let me try again: Could you please rephrase your question?"
+            return f"I encountered an error: {error_str}"
+
         return AgentExecutor(
-            agent=agent, tools=self.tools, verbose=True, handle_parsing_errors=True
+            agent=agent,
+            tools=self.tools,
+            verbose=True,
+            handle_parsing_errors=_handle_error,
+            max_iterations=10,
+            max_execution_time=60,
+            early_stopping_method="generate",
         )
 
     async def process_message(self, message: str) -> str:
@@ -117,50 +135,7 @@ Thought:{agent_scratchpad}"""
             history_context += "\n"
 
         try:
-            # Create a custom prompt with history
-            template_with_history = """Answer the following questions as best you can. You have access to the following tools:
-
-{tools}
-
-Use the following format:
-
-Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
-Final Answer: the final answer to the original input question
-
-IMPORTANT CONTEXT:
-- Current time is {current_time}.
-- This is part of a conversation. Remember what you asked the user previously and use their responses to fill in missing information.
-
-IMPORTANT RULES FOR SCHEDULING:
-1. When user mentions relative time like "tomorrow at 5pm", calculate the ISO datetime based on current time.
-2. Be SMART about what information is missing:
-   - If user provides BOTH event name AND date/time (e.g., "schedule dinner tomorrow"), only ask for missing details (time if not specified, location if relevant).
-   - If user is vague (e.g., "schedule something"), ask for ALL missing details: What? When? Where?
-   - When user responds to your clarifying questions, ACCEPT their answer and use it to complete the task.
-   - Only ask for information that is truly needed - don't be overly strict.
-3. Ask for clarification only on information that is genuinely missing or unclear.
-4. Combine clarifying questions into ONE message, not multiple separate questions.
-
-{history}
-
-Begin!
-
-Question: {input}
-Thought:{agent_scratchpad}"""
-
-            prompt = PromptTemplate.from_template(template_with_history)
-            agent = create_react_agent(self.llm, self.tools, prompt)
-            executor = AgentExecutor(
-                agent=agent, tools=self.tools, verbose=True, handle_parsing_errors=True
-            )
-
-            response = await executor.ainvoke(
+            response = await self.agent_executor.ainvoke(
                 {"input": message, "current_time": current_time, "history": history_context}
             )
             response_text = response["output"]
@@ -171,4 +146,5 @@ Thought:{agent_scratchpad}"""
 
             return response_text
         except Exception as e:
+            traceback.print_exc()
             return f"I encountered an error: {e!s}"
