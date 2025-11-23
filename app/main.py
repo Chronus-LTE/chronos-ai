@@ -1,13 +1,17 @@
 """
 FastAPI application entry point
 """
+
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
+from fastapi.staticfiles import StaticFiles
 
+from app.api.v1 import api_router
 from app.config import settings
-from app.database import init_db, close_db
+from app.database import close_db, init_db
 
 # Configure logging
 logging.basicConfig(
@@ -43,6 +47,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -76,17 +83,12 @@ async def health_check():
     }
 
 
-# Import and include routers (will be created later)
-# from app.api.v1 import auth, calendar, tasks, email, chat
-# app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-# app.include_router(calendar.router, prefix="/api/v1/calendar", tags=["calendar"])
-# app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
-# app.include_router(email.router, prefix="/api/v1/email", tags=["email"])
-# app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
+app.include_router(api_router, prefix="/api/v1")
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app.main:app",
         host=settings.HOST,

@@ -1,228 +1,366 @@
-# 🚀 Quick Start Guide
+# 🚀 Quick Start Guide - Chronus AI
 
-## Prerequisites Checklist
-- [ ] Python 3.11+ installed
-- [ ] Docker Desktop installed and running
-- [ ] Google Cloud Project created
-- [ ] Gemini API key obtained
+## 📋 Prerequisites
+
+- Docker & Docker Compose
+- Google OAuth credentials
+- Gemini API key
 
 ---
 
-## 🎯 Setup Steps
+## 🔧 Setup
 
-### 1. Clone and Navigate
+### 1. Clone & Configure
+
 ```bash
 cd /Users/huyphan/Documents/Chronus/chronus-ai
+
+# Copy environment file
+cp .env.example .env
+
+# Edit .env with your credentials
+nano .env
 ```
 
-### 2. Run Setup Script (Recommended)
-```bash
-chmod +x setup.sh
-./setup.sh
-```
+### 2. Required Environment Variables
 
-This will:
-- Create virtual environment
-- Install all dependencies
-- Start Docker services (PostgreSQL, Redis, Qdrant)
-- Run database migrations
-- Create .env file
-
-### 3. Configure Environment Variables
-Edit `.env` file and add your credentials:
-```bash
-# Google APIs
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-client-secret
+```env
+# Google OAuth
+GOOGLE_CLIENT_ID=your-client-id-here
+GOOGLE_CLIENT_SECRET=your-client-secret-here
 
 # Gemini API
-GEMINI_API_KEY=your-gemini-api-key
+GEMINI_API_KEY=your-gemini-api-key-here
 
-# Security (generate a random secret key)
-SECRET_KEY=your-secret-key-here
-```
+# Security
+SECRET_KEY=your-random-secret-key-here
 
-### 4. Start the Application
-```bash
-# Activate virtual environment
-source venv/bin/activate
+# Database (default - no need to change)
+DATABASE_URL=postgresql+asyncpg://chronus:chronus123@postgres:5432/chronus
 
-# Start FastAPI server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
+# Redis (default)
+REDIS_URL=redis://redis:6379/0
 
-### 5. Start Background Workers (Optional)
-In separate terminals:
+# Qdrant (default)
+QDRANT_HOST=qdrant
+QDRANT_PORT=6333
 
-```bash
-# Terminal 2: Celery Worker
-source venv/bin/activate
-celery -A app.tasks.celery_app worker --loglevel=info
-
-# Terminal 3: Celery Beat (Scheduler)
-source venv/bin/activate
-celery -A app.tasks.celery_app beat --loglevel=info
-
-# Terminal 4: Flower (Monitoring)
-source venv/bin/activate
-celery -A app.tasks.celery_app flower --port=5555
+# Celery (default)
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
 ```
 
 ---
 
-## 🌐 Access Points
+## 🐳 Start Services
 
-- **API**: http://localhost:8000
-- **API Docs (Swagger)**: http://localhost:8000/docs
-- **API Docs (ReDoc)**: http://localhost:8000/redoc
-- **Qdrant Dashboard**: http://localhost:6333/dashboard
-- **Flower (Celery Monitor)**: http://localhost:5555
-
----
-
-## 🧪 Run Tests
+### Option 1: Start All Services
 
 ```bash
-# Activate virtual environment
-source venv/bin/activate
-
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app tests/
-
-# Run specific test
-pytest tests/test_main.py -v
-```
-
----
-
-## 🛠️ Development Commands
-
-### Database Migrations
-```bash
-# Create a new migration
-alembic revision --autogenerate -m "description"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback one migration
-alembic downgrade -1
-
-# Show current revision
-alembic current
-```
-
-### Docker Services
-```bash
-# Start all services
 docker-compose up -d
+```
 
-# Stop all services
-docker-compose down
+### Option 2: Start Specific Services
 
-# View logs
+```bash
+# Core services only
+docker-compose up -d postgres redis api
+
+# Add Celery for proactive analysis
+docker-compose up -d celery-worker celery-beat
+
+# Add Qdrant for vector search
+docker-compose up -d qdrant
+
+# Add Flower for monitoring
+docker-compose up -d flower
+```
+
+---
+
+## 📊 Check Services
+
+### View Logs
+
+```bash
+# All services
 docker-compose logs -f
 
-# Restart a specific service
-docker-compose restart postgres
+# Specific service
+docker-compose logs -f api
+docker-compose logs -f celery-worker
 ```
 
-### Code Quality
+### Check Status
+
 ```bash
-# Format code with Black
-black app/
+docker-compose ps
+```
 
-# Lint with Flake8
-flake8 app/
+### Access Services
 
-# Type checking with MyPy
-mypy app/
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Flower (Celery)**: http://localhost:5555
+- **Qdrant Dashboard**: http://localhost:6333/dashboard
+
+---
+
+## 🗄️ Database Setup
+
+### Run Migrations
+
+```bash
+# Enter API container
+docker-compose exec api bash
+
+# Run migrations
+alembic upgrade head
+
+# Exit container
+exit
 ```
 
 ---
 
-## 📊 Project Status
+## ✅ Test the System
 
-### ✅ Completed
-- [x] Project structure setup
-- [x] FastAPI application skeleton
-- [x] Database configuration (PostgreSQL)
-- [x] Redis integration
-- [x] Qdrant setup
-- [x] Docker Compose configuration
-- [x] Alembic migrations setup
-- [x] Basic tests
+### 1. Test API Health
 
-### 🚧 In Progress
-- [ ] User authentication
-- [ ] Google Calendar integration
-- [ ] Google Tasks integration
-- [ ] Gmail integration
-- [ ] Gemini AI agent
-- [ ] Vector store service
+```bash
+curl http://localhost:8000/
+```
 
-### 📋 TODO
-- [ ] Celery tasks implementation
-- [ ] API endpoints
-- [ ] Frontend (optional)
-- [ ] Deployment configuration
+### 2. Test Google OAuth
+
+1. Open: http://localhost:8000/static/login.html
+2. Click "Login with Google"
+3. Authorize the app
+4. You'll be redirected to dashboard
+
+### 3. Test Gmail Integration
+
+1. Login first (step 2)
+2. Open: http://localhost:8000/static/gmail-test.html
+3. Test các features:
+   - List emails
+   - Search emails
+   - Send email
+   - Create draft
+
+### 4. Test AI Agent
+
+```bash
+# Get your JWT token from browser localStorage after login
+TOKEN="your-jwt-token"
+
+# Test chat
+curl -X POST http://localhost:8000/api/v1/chat/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Tôi có email chưa đọc không?"}'
+```
+
+### 5. Test Alerts
+
+```bash
+# List alerts
+curl http://localhost:8000/api/v1/alerts/ \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### 6. Test Knowledge Base
+
+```bash
+# Create knowledge
+curl -X POST http://localhost:8000/api/v1/knowledge/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "How to use Chronus",
+    "content": "Chronus is an AI assistant...",
+    "category": "tutorial"
+  }'
+
+# Search knowledge
+curl "http://localhost:8000/api/v1/knowledge/search?query=how+to+use" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## 🔍 Monitoring
+
+### Celery Tasks (Flower)
+
+```bash
+open http://localhost:5555
+```
+
+### Qdrant Collections
+
+```bash
+curl http://localhost:6333/collections
+```
+
+### Database
+
+```bash
+# Connect to PostgreSQL
+docker-compose exec postgres psql -U chronus -d chronus
+
+# List tables
+\dt
+
+# Exit
+\q
+```
+
+---
+
+## 🛠️ Common Commands
+
+### Restart Services
+
+```bash
+docker-compose restart api
+docker-compose restart celery-worker
+```
+
+### View Service Logs
+
+```bash
+docker-compose logs -f api
+docker-compose logs -f celery-worker
+docker-compose logs -f celery-beat
+```
+
+### Stop All Services
+
+```bash
+docker-compose down
+```
+
+### Clean Up (⚠️ Deletes all data)
+
+```bash
+docker-compose down -v
+```
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Database Connection Error
-```bash
-# Check if PostgreSQL is running
-docker-compose ps
+### API not starting?
 
-# Restart PostgreSQL
-docker-compose restart postgres
+```bash
+# Check logs
+docker-compose logs api
+
+# Rebuild
+docker-compose build api
+docker-compose up -d api
 ```
 
-### Redis Connection Error
-```bash
-# Check if Redis is running
-docker-compose ps
+### Celery tasks not running?
 
-# Restart Redis
-docker-compose restart redis
+```bash
+# Check Celery worker
+docker-compose logs celery-worker
+
+# Check Celery beat
+docker-compose logs celery-beat
+
+# Restart
+docker-compose restart celery-worker celery-beat
 ```
 
-### Import Errors
-```bash
-# Make sure virtual environment is activated
-source venv/bin/activate
+### Qdrant connection error?
 
-# Reinstall dependencies
-pip install -r requirements.txt
+```bash
+# Check Qdrant status
+curl http://localhost:6333/collections
+
+# Restart Qdrant
+docker-compose restart qdrant
+```
+
+### Database migration issues?
+
+```bash
+# Enter container
+docker-compose exec api bash
+
+# Check current version
+alembic current
+
+# Upgrade
+alembic upgrade head
+
+# Or downgrade if needed
+alembic downgrade -1
 ```
 
 ---
 
 ## 📚 Next Steps
 
-1. **Implement User Model** - Create user authentication
-2. **Google OAuth** - Setup Google API authentication
-3. **Calendar Service** - Implement calendar sync
-4. **Task Service** - Implement task management
-5. **Email Service** - Implement email digest
-6. **AI Agent** - Setup Gemini with function calling
-7. **Vector Store** - Implement memory and semantic search
+1. ✅ **Test Gmail Integration**
+
+   - Login with Google
+   - Test reading emails
+   - Test sending emails
+   - Test draft functionality
+
+2. ✅ **Test Proactive Analysis**
+
+   - Wait for daily analysis (or trigger manually)
+   - Check alerts: http://localhost:8000/api/v1/alerts/
+
+3. ✅ **Test Knowledge Base**
+
+   - Create some knowledge entries
+   - Test semantic search
+   - Use in AI chat
+
+4. ✅ **Monitor Celery**
+   - Open Flower: http://localhost:5555
+   - Check task execution
+   - Monitor workers
 
 ---
 
-## 💡 Tips
+## 🎯 Quick Reference
 
-- Use `--reload` flag during development for auto-reload
-- Check logs in `docker-compose logs -f` for debugging
-- Use Swagger UI at `/docs` for API testing
-- Monitor Celery tasks with Flower
-- Keep your `.env` file secure and never commit it
+### Service Ports
+
+- API: 8000
+- PostgreSQL: 5432
+- Redis: 6379
+- Qdrant: 6333, 6334
+- Flower: 5555
+
+### Important URLs
+
+- API Docs: http://localhost:8000/docs
+- Login: http://localhost:8000/static/login.html
+- Dashboard: http://localhost:8000/static/dashboard.html
+- Gmail Test: http://localhost:8000/static/gmail-test.html
+- Flower: http://localhost:5555
+
+### Default Credentials
+
+- PostgreSQL: chronus / chronus123
+- Database: chronus
 
 ---
 
-**Happy Building! 🚀**
+## 🚀 You're Ready!
+
+Tất cả services đã sẵn sàng! Bắt đầu test và develop thôi! 🎉
+
+**Need help?** Check:
+
+- API Docs: http://localhost:8000/docs
+- Implementation Summary: `docs/IMPLEMENTATION_SUMMARY.md`
+- Gmail Integration: `docs/GMAIL_INTEGRATION.md`

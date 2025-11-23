@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail Integration Test - Chronus AI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .gmail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+        }
+
+        .test-section h3 {
+            color: #4285F4;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .test-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-btn.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .test-btn.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .email-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .email-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .email-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .email-subject {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .email-from {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .email-date {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .email-snippet {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .unread-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4285F4;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4285F4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #ef4444;
+            background: #fee;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #10b981;
+            background: #d1fae5;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="gmail-container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h1 style="margin: 0;">📧 Gmail Integration Test</h1>
+                    <p style="color: #666; margin: 5px 0 0 0;">Test Gmail API endpoints and features</p>
+                </div>
+                <button onclick="window.location.href='/static/dashboard.html'" class="btn btn-primary">
+                    ← Back to Dashboard
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-value" id="unreadCount">-</div>
+                    <div class="stat-label">Unread Emails</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-value" id="totalCount">-</div>
+                    <div class="stat-label">Total Emails</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="stat-value" id="labelCount">-</div>
+                    <div class="stat-label">Labels</div>
+                </div>
+            </div>
+
+            <!-- List Messages -->
+            <div class="test-section">
+                <h3>📬 List Messages</h3>
+                <div class="test-buttons">
+                    <button class="test-btn" onclick="listMessages(10)">List 10 Messages</button>
+                    <button class="test-btn" onclick="listMessages(20)">List 20 Messages</button>
+                    <button class="test-btn secondary" onclick="searchMessages('is:unread')">Unread Only</button>
+                    <button class="test-btn secondary" onclick="searchMessages('is:starred')">Starred</button>
+                </div>
+                <div id="messagesList"></div>
+            </div>
+
+            <!-- Search Messages -->
+            <div class="test-section">
+                <h3>🔍 Search Messages</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="searchQuery" class="form-control"
+                        placeholder="e.g., from:example@gmail.com, subject:meeting, has:attachment"
+                        style="flex: 1; margin: 0;">
+                    <button class="test-btn success" onclick="searchMessagesCustom()">Search</button>
+                </div>
+                <div class="test-buttons">
+                    <button class="test-btn" onclick="searchMessages('is:unread')">is:unread</button>
+                    <button class="test-btn" onclick="searchMessages('has:attachment')">has:attachment</button>
+                    <button class="test-btn" onclick="searchMessages('is:important')">is:important</button>
+                    <button class="test-btn" onclick="searchMessages('newer_than:7d')">newer_than:7d</button>
+                </div>
+                <div id="searchResults"></div>
+            </div>
+
+            <!-- Send Email -->
+            <div class="test-section">
+                <h3>✉️ Send Email</h3>
+                <div class="form-group">
+                    <label>To:</label>
+                    <input type="email" id="emailTo" placeholder="recipient@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Subject:</label>
+                    <input type="text" id="emailSubject" placeholder="Email subject">
+                </div>
+                <div class="form-group">
+                    <label>Body:</label>
+                    <textarea id="emailBody" placeholder="Email body content"></textarea>
+                </div>
+                <button class="test-btn success" onclick="sendEmail()">Send Email</button>
+                <div id="sendResult"></div>
+            </div>
+
+            <!-- Get Labels -->
+            <div class="test-section">
+                <h3>🏷️ Gmail Labels</h3>
+                <button class="test-btn" onclick="getLabels()">Get All Labels</button>
+                <div id="labelsResult"></div>
+            </div>
+
+            <!-- AI Agent Test -->
+            <div class="test-section">
+                <h3>🤖 AI Agent Gmail Test</h3>
+                <div class="test-buttons">
+                    <button class="test-btn" onclick="testAI('Do I have any unread emails?')">
+                        Ask: Unread emails?
+                    </button>
+                    <button class="test-btn" onclick="testAI('Show me my recent emails')">
+                        Ask: Recent emails
+                    </button>
+                    <button class="test-btn secondary" onclick="testAI('Tôi có email chưa đọc không?')">
+                        Hỏi: Email chưa đọc? (VI)
+                    </button>
+                </div>
+                <div id="aiResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        checkAuth();
+
+        const API_BASE = '/api/v1/gmail';
+
+        async function apiCall(endpoint, options = {}) {
+            const token = localStorage.getItem('token');
+            const response = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'API Error');
+            }
+
+            return response.json();
+        }
+
+        async function loadStats() {
+            try {
+                // Get unread count
+                const unreadData = await apiCall(`${API_BASE}/unread-count`);
+                document.getElementById('unreadCount').textContent = unreadData.unread_count;
+
+                // Get total messages
+                const messagesData = await apiCall(`${API_BASE}/messages?max_results=1`);
+                document.getElementById('totalCount').textContent = messagesData.count;
+
+                // Get labels count
+                const labelsData = await apiCall(`${API_BASE}/labels`);
+                document.getElementById('labelCount').textContent = labelsData.labels.length;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function listMessages(maxResults = 10) {
+            const container = document.getElementById('messagesList');
+            container.innerHTML = '<div class="loading"></div> Loading messages...';
+
+            try {
+                const data = await apiCall(`${API_BASE}/messages?max_results=${maxResults}`);
+                displayEmails(data.emails, container);
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function searchMessages(query) {
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '<div class="loading"></div> Searching...';
+
+            try {
+                const data = await apiCall(`${API_BASE}/messages/search?query=${encodeURIComponent(query)}&max_results=10`);
+                container.innerHTML = `<p style="color: #666; margin-bottom: 10px;">Found ${data.count} results for: <strong>${query}</strong></p>`;
+                displayEmails(data.emails, container, true);
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function searchMessagesCustom() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+            await searchMessages(query);
+        }
+
+        function displayEmails(emails, container, append = false) {
+            if (!append) {
+                container.innerHTML = '';
+            }
+
+            if (!emails || emails.length === 0) {
+                container.innerHTML += '<p style="color: #666;">No emails found.</p>';
+                return;
+            }
+
+            emails.forEach(email => {
+                const card = document.createElement('div');
+                card.className = 'email-card';
+                card.innerHTML = `
+                    <div class="email-header">
+                        <div style="flex: 1;">
+                            <div class="email-subject">
+                                ${email.isUnread ? '<span class="unread-badge"></span>' : ''}
+                                ${escapeHtml(email.subject)}
+                            </div>
+                            <div class="email-from">From: ${escapeHtml(email.from)}</div>
+                        </div>
+                        <div class="email-date">${escapeHtml(email.date)}</div>
+                    </div>
+                    <div class="email-snippet">${escapeHtml(email.snippet)}</div>
+                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button class="test-btn" style="font-size: 12px; padding: 5px 10px;"
+                                onclick="readEmail('${email.id}')">Read Full</button>
+                        ${email.isUnread ?
+                        `<button class="test-btn secondary" style="font-size: 12px; padding: 5px 10px;"
+                                    onclick="markAsRead('${email.id}')">Mark Read</button>` :
+                        `<button class="test-btn" style="font-size: 12px; padding: 5px 10px;"
+                                    onclick="markAsUnread('${email.id}')">Mark Unread</button>`
+                    }
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function readEmail(messageId) {
+            try {
+                const email = await apiCall(`${API_BASE}/messages/${messageId}`);
+                alert(`Subject: ${email.subject}\n\nFrom: ${email.from}\nTo: ${email.to}\nDate: ${email.date}\n\n${email.body.substring(0, 500)}...`);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function markAsRead(messageId) {
+            try {
+                await apiCall(`${API_BASE}/messages/${messageId}/mark-read`, { method: 'POST' });
+                alert('✅ Marked as read!');
+                loadStats();
+                listMessages(10);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function markAsUnread(messageId) {
+            try {
+                await apiCall(`${API_BASE}/messages/${messageId}/mark-unread`, { method: 'POST' });
+                alert('✅ Marked as unread!');
+                loadStats();
+                listMessages(10);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function sendEmail() {
+            const to = document.getElementById('emailTo').value.trim();
+            const subject = document.getElementById('emailSubject').value.trim();
+            const body = document.getElementById('emailBody').value.trim();
+            const resultDiv = document.getElementById('sendResult');
+
+            if (!to || !subject || !body) {
+                resultDiv.innerHTML = '<div class="error">Please fill in all fields</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="loading"></div> Sending...';
+
+            try {
+                const result = await apiCall(`${API_BASE}/messages/send`, {
+                    method: 'POST',
+                    body: JSON.stringify({ to, subject, body })
+                });
+
+                resultDiv.innerHTML = `<div class="success">✅ Email sent successfully! Message ID: ${result.id}</div>`;
+
+                // Clear form
+                document.getElementById('emailTo').value = '';
+                document.getElementById('emailSubject').value = '';
+                document.getElementById('emailBody').value = '';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function getLabels() {
+            const container = document.getElementById('labelsResult');
+            container.innerHTML = '<div class="loading"></div> Loading labels...';
+
+            try {
+                const data = await apiCall(`${API_BASE}/labels`);
+
+                let html = '<div class="result-box">';
+                html += `<strong>Total Labels: ${data.labels.length}</strong><br><br>`;
+
+                data.labels.forEach(label => {
+                    html += `📁 <strong>${label.name}</strong> (${label.id})`;
+                    if (label.type) html += ` - ${label.type}`;
+                    html += '<br>';
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testAI(message) {
+            const container = document.getElementById('aiResult');
+            container.innerHTML = '<div class="loading"></div> AI is thinking...';
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/v1/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    container.innerHTML = `
+                        <div class="result-box">
+                            <strong>You:</strong> ${escapeHtml(message)}<br><br>
+                            <strong>AI:</strong> ${escapeHtml(data.response)}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `<div class="error">Error: ${data.detail}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load stats on page load
+        loadStats();
+        listMessages(10);
+    </script>
+</body>
+
+</html>

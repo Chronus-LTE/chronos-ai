@@ -1,14 +1,10 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: chronus-postgres
-    environment:
-      POSTGRES_USER: chronus
-      POSTGRES_PASSWORD: chronus_password
-      POSTGRES_DB: chronus_db
+    env_file:
+      - .env
     ports:
       - "5432:5432"
     volumes:
@@ -21,7 +17,7 @@ services:
     networks:
       - chronus-network
 
-  # Redis Cache & Queue
+  # Redis Cache & Queue (REQUIRED for Celery)
   redis:
     image: redis:7-alpine
     container_name: chronus-redis
@@ -36,8 +32,9 @@ services:
       retries: 5
     networks:
       - chronus-network
+    restart: unless-stopped
 
-  # Qdrant Vector Database
+  # Qdrant Vector Database (Optional - for future semantic search)
   qdrant:
     image: qdrant/qdrant:latest
     container_name: chronus-qdrant
@@ -46,15 +43,17 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-    environment:
-      - QDRANT__SERVICE__GRPC_PORT=6334
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    env_file:
+      - .env
+    # Temporarily disable health check to debug
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
     networks:
       - chronus-network
+    restart: unless-stopped
 
   # FastAPI Application
   api:
@@ -68,16 +67,6 @@ services:
     volumes:
       - .:/app
       - /app/venv  # Prevent overwriting container's venv
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://chronus:chronus_password@postgres:5432/chronus_db
-      - REDIS_URL=redis://redis:6379/0
-      - REDIS_CACHE_DB=1
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
-      - CELERY_BROKER_URL=redis://redis:6379/2
-      - CELERY_RESULT_BACKEND=redis://redis:6379/3
-      - ENVIRONMENT=development
-      - DEBUG=True
     env_file:
       - .env
     depends_on:
@@ -85,80 +74,69 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      qdrant:
-        condition: service_healthy
+      # Temporarily disable qdrant dependency for debugging
+      # qdrant:
+      #   condition: service_healthy
     networks:
       - chronus-network
     restart: unless-stopped
 
-  # Celery Worker
+  # Celery Worker (REQUIRED for Proactive Analysis)
   celery-worker:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: chronus-celery-worker
-    command: celery -A app.tasks.celery_app worker --loglevel=info
+    command: celery -A app.tasks worker --loglevel=info
     volumes:
       - .:/app
       - /app/venv
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://chronus:chronus_password@postgres:5432/chronus_db
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/2
-      - CELERY_RESULT_BACKEND=redis://redis:6379/3
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
     env_file:
       - .env
     depends_on:
-      - redis
-      - postgres
-      - qdrant
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - chronus-network
     restart: unless-stopped
 
-  # Celery Beat (Scheduler)
+  # Celery Beat (REQUIRED for Scheduled Tasks - Daily Analysis)
   celery-beat:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: chronus-celery-beat
-    command: celery -A app.tasks.celery_app beat --loglevel=info
+    command: celery -A app.tasks beat --loglevel=info
     volumes:
       - .:/app
       - /app/venv
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://chronus:chronus_password@postgres:5432/chronus_db
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/2
-      - CELERY_RESULT_BACKEND=redis://redis:6379/3
     env_file:
       - .env
     depends_on:
-      - redis
-      - postgres
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - chronus-network
     restart: unless-stopped
 
-  # Flower (Celery Monitoring)
+  # Flower (Celery Monitoring - Optional but recommended)
   flower:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: chronus-flower
-    command: celery -A app.tasks.celery_app flower --port=5555
+    command: celery -A app.tasks flower --port=5555
     ports:
       - "5555:5555"
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/2
-      - CELERY_RESULT_BACKEND=redis://redis:6379/3
     env_file:
       - .env
     depends_on:
-      - redis
-      - celery-worker
+      redis:
+        condition: service_healthy
     networks:
       - chronus-network
     restart: unless-stopped

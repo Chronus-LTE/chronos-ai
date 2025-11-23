@@ -1,0 +1,99 @@
+# Ruff configuration for Chronus AI
+# https://docs.astral.sh/ruff/
+
+# Exclude directories
+extend-exclude = [
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    "__pycache__",
+    ".git",
+    "alembic/versions",
+    "build",
+    "dist",
+]
+
+# Line length
+line-length = 100
+
+# Python version
+target-version = "py310"
+
+[lint]
+# Enable rules
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez
+    "T10",    # flake8-debugger
+    "EM",     # flake8-errmsg
+    "ISC",    # flake8-implicit-str-concat
+    "ICN",    # flake8-import-conventions
+    "PIE",    # flake8-pie
+    "PT",     # flake8-pytest-style
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return
+    "SIM",    # flake8-simplify
+    "TID",    # flake8-tidy-imports
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate
+    "PL",     # pylint
+    "RUF",    # ruff-specific rules
+]
+
+# Disable specific rules
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "B008",    # do not perform function calls in argument defaults (FastAPI Depends)
+    "PLR0913", # too many arguments
+    "PLR2004", # magic value used in comparison
+    "ARG001",  # unused function argument (FastAPI dependencies)
+    "ARG002",  # unused method argument
+    "N805",    # first argument of a method should be named `self`
+    "DTZ005",  # datetime.datetime.now() without tz (we use utcnow)
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.per-file-ignores]
+# Ignore imports in __init__.py files
+"__init__.py" = ["F401", "F403"]
+# Ignore unused imports in alembic migrations
+"alembic/versions/*.py" = ["F401"]
+
+[lint.isort]
+known-first-party = ["app"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.pydocstyle]
+convention = "google"
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Auto-detect line endings
+line-ending = "auto"
