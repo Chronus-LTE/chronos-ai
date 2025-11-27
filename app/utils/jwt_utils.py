@@ -30,7 +30,29 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": "access"})
+    return encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """
+    Create JWT refresh token.
+
+    Args:
+        data: Data to encode in the token
+        expires_delta: Optional token expiration time
+
+    Returns:
+        Encoded JWT token string
+    """
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    to_encode.update({"exp": expire, "type": "refresh"})
     return encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -48,10 +70,11 @@ def verify_token(token: str) -> TokenData | None:
         payload = decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         user_id: int = payload.get("user_id")
+        token_type: str = payload.get("type")
 
         if email is None:
             return None
 
-        return TokenData(email=email, user_id=user_id)
+        return TokenData(email=email, user_id=user_id, type=token_type)
     except PyJWTError:
         return None
