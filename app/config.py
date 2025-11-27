@@ -12,59 +12,61 @@ class Settings(BaseSettings):
     model_config = ConfigDict(
         env_file=".env",
         case_sensitive=True,
-        extra="ignore",  # Ignore extra fields from .env
+        extra="ignore",
     )
 
     # Application
-    APP_NAME: str = "Chronus AI"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
-    ENVIRONMENT: str = "development"
+    APP_NAME: str
+    APP_VERSION: str
+    DEBUG: bool
+    ENVIRONMENT: str
 
     # Server
-    HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    HOST: str
+    PORT: int
+    FRONTEND_URL: str
 
     # Database - PostgreSQL
     DATABASE_URL: str
-    DATABASE_POOL_SIZE: int = 20
-    DATABASE_MAX_OVERFLOW: int = 0
+    DATABASE_POOL_SIZE: int
+    DATABASE_MAX_OVERFLOW: int
 
     # Redis
     REDIS_URL: str
-    REDIS_CACHE_DB: int = 1
+    REDIS_CACHE_DB: int
 
     # Qdrant Vector Database
-    QDRANT_HOST: str = "localhost"
-    QDRANT_PORT: int = 6333
-    QDRANT_API_KEY: str | None = None
-    QDRANT_COLLECTION_NAME: str = "chronus_memory"
+    QDRANT_HOST: str
+    QDRANT_PORT: int
+    QDRANT_API_KEY: str
+    QDRANT_COLLECTION_NAME: str
 
     # Celery
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
     # Google OAuth
-    GOOGLE_CLIENT_ID: str | None = None
-    GOOGLE_CLIENT_SECRET: str | None = None
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
 
     # Google Gemini API
-    GEMINI_API_KEY: str | None = None
+    GEMINI_API_KEY: str
 
     # Security
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Embeddings Model
-    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    EMBEDDING_MODEL: str
 
     # Timezone
-    TIMEZONE: str = "Asia/Ho_Chi_Minh"
+    TIMEZONE: str
 
     # Logging
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str
 
     @property
     def qdrant_url(self) -> str:

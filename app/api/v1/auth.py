@@ -2,8 +2,8 @@
 Authentication API endpoints.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from google_auth_oauthlib.flow import Flow
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +15,7 @@ from app.schemas.auth import Token, UserCreate, UserLogin, UserUpdate
 from app.schemas.auth import User as UserSchema
 from app.services.auth.auth_service import AuthService
 from app.services.auth.user_service import UserService
-from app.utils.jwt_utils import create_access_token
+from app.utils.jwt_utils import create_access_token, create_refresh_token, verify_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -39,16 +39,11 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/tasks",  # Temporarily added to match existing consent
-    "https://www.googleapis.com/auth/gmail.readonly",  # Read emails
-    "https://www.googleapis.com/auth/gmail.send",  # Send emails
-    "https://www.googleapis.com/auth/gmail.modify",  # Modify emails (labels, etc)
+    "https://www.googleapis.com/auth/tasks",
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.modify",
 ]
-
-
-# ============================================================================
-# DEPENDENCY FUNCTIONS
-# ============================================================================
 
 
 async def get_current_user(
@@ -90,11 +85,6 @@ async def get_current_active_user(
     return await AuthService.get_current_active_user(current_user)
 
 
-# ============================================================================
-# AUTHENTICATION ENDPOINTS
-# ============================================================================
-
-
 @router.post("/register", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     """
@@ -123,11 +113,12 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-async def login(user_in: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(response: Response, user_in: UserLogin, db: AsyncSession = Depends(get_db)):
     """
     Login with email and password.
 
     Args:
+        response: FastAPI response object
         user_in: User login data
         db: Database session
 
@@ -148,8 +139,19 @@ async def login(user_in: UserLogin, db: AsyncSession = Depends(get_db)):
     # Update last login
     await UserService.update_last_login(db, user)
 
-    # Create JWT token
+    # Create JWT tokens
     access_token = create_access_token(data={"sub": user.email, "user_id": user.id})
+    refresh_token = create_refresh_token(data={"sub": user.email, "user_id": user.id})
+
+    # Set refresh token in HttpOnly cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",  # Only secure in production
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
 
     # Convert user to schema
     user_schema = UserSchema.from_orm(user)
@@ -188,7 +190,9 @@ async def google_login():
 
 
 @router.get("/google/callback", response_model=Token | None)
-async def google_callback(request: Request, code: str, db: AsyncSession = Depends(get_db)):
+async def google_callback(
+    request: Request, response: Response, code: str, db: AsyncSession = Depends(get_db)
+):
     """
     Handle Google OAuth callback.
     Supports both JSON response (API) and HTML response (Web).
@@ -218,8 +222,19 @@ async def google_callback(request: Request, code: str, db: AsyncSession = Depend
         # Get or create user in database
         user = await AuthService.get_or_create_user(db, google_user_info)
 
-        # Create JWT token
+        # Create JWT tokens
         access_token = create_access_token(data={"sub": user.email, "user_id": user.id})
+        refresh_token = create_refresh_token(data={"sub": user.email, "user_id": user.id})
+
+        # Set refresh token in HttpOnly cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=settings.ENVIRONMENT == "production",
+            samesite="lax",
+            max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        )
 
         # Convert user to schema
         user_schema = UserSchema.from_orm(user)
@@ -228,22 +243,17 @@ async def google_callback(request: Request, code: str, db: AsyncSession = Depend
         # Check if client wants HTML (Browser)
         accept = request.headers.get("accept", "")
         if "text/html" in accept:
-            html_content = f"""
-            <html>
-                <head>
-                    <title>Authenticating...</title>
-                    <script>
-                        localStorage.setItem('token', '{access_token}');
-                        localStorage.setItem('user', JSON.stringify({user_schema.model_dump_json()}));
-                        window.location.href = '/static/dashboard.html';
-                    </script>
-                </head>
-                <body>
-                    <p>Authenticating, please wait...</p>
-                </body>
-            </html>
-            """
-            return HTMLResponse(content=html_content)
+            # Redirect to frontend
+            redirect_response = RedirectResponse(url=settings.FRONTEND_URL)
+            redirect_response.set_cookie(
+                key="refresh_token",
+                value=refresh_token,
+                httponly=True,
+                secure=settings.ENVIRONMENT == "production",
+                samesite="lax",
+                max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+            )
+            return redirect_response
 
         return token_data
 
@@ -254,11 +264,6 @@ async def google_callback(request: Request, code: str, db: AsyncSession = Depend
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing Google callback: {error!s}",
         ) from error
-
-
-# ============================================================================
-# USER PROFILE ENDPOINTS
-# ============================================================================
 
 
 @router.get("/me", response_model=UserSchema)
@@ -326,44 +331,86 @@ async def delete_account(
     return {"message": "Account successfully deactivated"}
 
 
-# ============================================================================
-# SESSION MANAGEMENT
-# ============================================================================
-
-
 @router.post("/logout")
-async def logout(current_user: User = Depends(get_current_user)):
+async def logout(response: Response, current_user: User = Depends(get_current_user)):
     """
     Logout current user.
 
     Note: Since we're using JWT tokens, the client should simply discard the token.
-    This endpoint is provided for consistency and can be extended for token blacklisting.
+    We also clear the refresh token cookie.
 
     Args:
+        response: FastAPI response object
         current_user: Current authenticated user
 
     Returns:
         dict: Success message
     """
+    response.delete_cookie(key="refresh_token")
     return {"message": "Successfully logged out"}
 
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(current_user: User = Depends(get_current_user)):
+async def refresh_token(
+    response: Response,
+    refresh_token: str | None = Cookie(None),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Refresh JWT access token.
+    Refresh JWT access token using refresh token from cookie.
 
     Args:
-        current_user: Current authenticated user
+        response: FastAPI response object
+        refresh_token: Refresh token from cookie
+        db: Database session
 
     Returns:
         Token: New JWT access token and user information
+
+    Raises:
+        HTTPException: If refresh token is missing or invalid
     """
-    # Create new JWT token
-    access_token = create_access_token(data={"sub": current_user.email, "user_id": current_user.id})
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token missing",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Verify token
+    token_data = verify_token(refresh_token)
+    if not token_data or token_data.type != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Get user
+    user = await UserService.get_by_email(db, token_data.email)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create new JWT tokens
+    access_token = create_access_token(data={"sub": user.email, "user_id": user.id})
+    new_refresh_token = create_refresh_token(data={"sub": user.email, "user_id": user.id})
+
+    # Set new refresh token in HttpOnly cookie (rotate refresh token)
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
 
     # Convert user to schema
-    user_schema = UserSchema.from_orm(current_user)
+    user_schema = UserSchema.from_orm(user)
 
     return Token(access_token=access_token, token_type="bearer", user=user_schema)
 

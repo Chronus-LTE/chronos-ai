@@ -68,6 +68,7 @@ class TokenData(BaseModel):
 
     email: str | None = None
     user_id: int | None = None
+    type: str | None = None
 
 
 class GoogleUserInfo(BaseModel):
