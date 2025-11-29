@@ -16,12 +16,12 @@ _agent_instances: dict[int, AIAgentService] = {}
 
 class ChatRequest(BaseModel):
     message: str
-    conversation_id: int | None = None
+    conversation_id: str | None = None
 
 
 class ChatResponse(BaseModel):
     response: str
-    conversation_id: int | None = None
+    conversation_id: str | None = None
     context: dict | None = None
 
 
@@ -95,7 +95,7 @@ async def chat(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/history/conversations")
+@router.get("/conversations")
 async def list_conversations(
     limit: int = 20,
     current_user: User = Depends(get_current_user),
@@ -106,9 +106,9 @@ async def list_conversations(
     return await chat_service.get_recent_conversations(limit=limit)
 
 
-@router.get("/history/{conversation_id}")
+@router.get("/{conversation_id}")
 async def get_conversation_history(
-    conversation_id: int,
+    conversation_id: str,
     limit: int = 50,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -118,7 +118,7 @@ async def get_conversation_history(
     return await chat_service.get_conversation_history(conversation_id, limit=limit)
 
 
-@router.get("/history/search")
+@router.get("/search")
 async def search_conversations(
     query: str,
     limit: int = 10,

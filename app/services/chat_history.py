@@ -56,7 +56,7 @@ class ChatHistoryService:
 
     async def add_message(
         self,
-        conversation_id: int,
+        conversation_id: str,
         role: str,
         content: str,
         metadata: dict | None = None,
@@ -121,7 +121,7 @@ class ChatHistoryService:
 
     async def get_conversation_history(
         self,
-        conversation_id: int,
+        conversation_id: str,
         limit: int = 50,
     ) -> list[Message]:
         """
@@ -212,7 +212,7 @@ class ChatHistoryService:
         )
         return result.scalars().all()
 
-    async def delete_conversation(self, conversation_id: int):
+    async def delete_conversation(self, conversation_id: str):
         """
         Delete a conversation and all its messages.
 
@@ -256,7 +256,7 @@ class ChatHistoryService:
     async def get_relevant_context(
         self,
         query: str,
-        current_conversation_id: int | None = None,
+        current_conversation_id: str | None = None,
         max_messages: int = 5,
     ) -> str:
         """

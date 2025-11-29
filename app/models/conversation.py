@@ -8,6 +8,7 @@ from sqlalchemy import Column, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.database import Base
+from app.utils.id_utils import generate_short_id
 
 
 class Conversation(Base):
@@ -15,7 +16,7 @@ class Conversation(Base):
 
     __tablename__ = "conversations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, default=generate_short_id)
     user_id = Column(Integer, index=True, nullable=False)
 
     # Conversation metadata
@@ -40,7 +41,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    conversation_id = Column(Integer, index=True, nullable=False)
+    conversation_id = Column(String(50), index=True, nullable=False)
     user_id = Column(Integer, index=True, nullable=False)
 
     # Message content

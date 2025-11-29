@@ -214,7 +214,7 @@ Thought:{agent_scratchpad}"""
                     "history": history_context,
                 }
             )
-            response_text = response["output"]
+            response_text = response["output"].strip()
 
             # Store in conversation history
             self.conversation_history.append(("User", message))
