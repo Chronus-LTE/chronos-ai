@@ -16,7 +16,7 @@ class UserService:
     """Service for user management operations"""
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, user_id: int) -> User | None:
+    async def get_by_id(db: AsyncSession, user_id: str) -> User | None:
         """
         Get user by ID.
 

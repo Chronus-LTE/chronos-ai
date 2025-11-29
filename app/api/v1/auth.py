@@ -240,11 +240,17 @@ async def google_callback(
         user_schema = UserSchema.from_orm(user)
         token_data = Token(access_token=access_token, token_type="bearer", user=user_schema)
 
-        # Check if client wants HTML (Browser)
         accept = request.headers.get("accept", "")
         if "text/html" in accept:
-            # Redirect to frontend
-            redirect_response = RedirectResponse(url=settings.FRONTEND_URL)
+            # Redirect to frontend callback page with tokens in URL
+            redirect_url = (
+                f"{settings.FRONTEND_CALLBACK_URL}"
+                f"?access_token={access_token}"
+                f"&refresh_token={refresh_token}"
+                f"&expires_in={settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60}"
+                f"&user={user_schema.model_dump_json()}"
+            )
+            redirect_response = RedirectResponse(url=redirect_url)
             redirect_response.set_cookie(
                 key="refresh_token",
                 value=refresh_token,

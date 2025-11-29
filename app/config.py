@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     HOST: str
     PORT: int
     FRONTEND_URL: str
+    FRONTEND_CALLBACK_URL: str
 
     # Database - PostgreSQL
     DATABASE_URL: str

@@ -7,8 +7,11 @@ import traceback
 
 from langchain.tools import Tool
 
+from app.database import SessionLocal
+from app.models.user import User
 from app.services.google.gmail_service import GoogleGmailService
 from app.services.tools.base import BaseToolSet
+from app.tasks.gmail_sync_tasks import sync_single_email
 
 
 class GoogleGmailToolSet(BaseToolSet):
@@ -182,6 +185,25 @@ class GoogleGmailToolSet(BaseToolSet):
                 subject=subject,
                 body=body,
             )
+
+            # Trigger background sync to save the sent email to DB
+            # This ensures the email appears in the user's sent folder with correct details
+            try:
+                message_id = result.get("id")
+                if message_id:
+                    # Find user by access token
+                    db = SessionLocal()
+                    try:
+                        user = db.query(User).filter_by(google_access_token=self.user_token).first()
+                        if user:
+                            # Trigger sync for this specific message
+                            sync_single_email.delay(user.id, message_id)
+                    finally:
+                        db.close()
+            except Exception as sync_error:
+                # Don't fail the email send if sync fails
+                traceback.print_exc()
+                print(f"Warning: Failed to trigger sync after sending email: {sync_error}")
 
             return (
                 f"✅ Email sent successfully to {to_email}\nMessage ID: {result.get('id', 'N/A')}"

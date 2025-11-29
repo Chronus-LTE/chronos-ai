@@ -2,10 +2,11 @@
 User model for authentication and user management
 """
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, String
 from sqlalchemy.sql import func
 
 from app.database import Base
+from app.utils.id_utils import generate_uuid_short
 
 
 class User(Base):
@@ -13,7 +14,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String(50), primary_key=True, index=True, default=generate_uuid_short)
     email = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String, nullable=True)
     picture = Column(String, nullable=True)
