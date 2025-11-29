@@ -72,3 +72,5 @@ token.json
 *.tmp
 *.bak
 *.swp
+
+chronus-infrastructure.json

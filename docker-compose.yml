@@ -66,7 +66,8 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-      - /app/venv  # Prevent overwriting container's venv
+      - /app/venv # Prevent overwriting container's venv
+      - ./chronus-infrastructure.json:/app/chronus-infrastructure.json:ro
     env_file:
       - .env
     depends_on:
@@ -91,6 +92,7 @@ services:
     volumes:
       - .:/app
       - /app/venv
+      - ./chronus-infrastructure.json:/app/chronus-infrastructure.json:ro
     env_file:
       - .env
     depends_on:
@@ -112,6 +114,7 @@ services:
     volumes:
       - .:/app
       - /app/venv
+      - ./chronus-infrastructure.json:/app/chronus-infrastructure.json:ro
     env_file:
       - .env
     depends_on:
