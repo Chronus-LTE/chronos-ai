@@ -3,7 +3,7 @@ AI Agent Service using LangChain and Google Gemini.
 """
 
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.prompts import PromptTemplate
@@ -147,13 +147,18 @@ SCHEDULING RULES:
 2. Calculate timestamps based on Current timestamp:
    - Tomorrow same time = current_timestamp + 86400
    - Next hour = current_timestamp + 3600
-3. When user asks about availability (e.g., "Am I free?", "What's up tomorrow?"), ALWAYS check BOTH:
+3. TIME COMPARISON RULES (CRITICAL):
+   - 00:00 to 11:59 is AM (Morning).
+   - 12:00 to 23:59 is PM (Afternoon/Evening).
+   - If current time is early morning (e.g., 00:30), then 08:00 SAME DAY is IN THE FUTURE (about 7.5 hours later).
+   - DO NOT say "already passed" if the target time is later in the same day.
+4. When user asks about availability (e.g., "Am I free?", "What's up tomorrow?"), ALWAYS check BOTH:
    - Calendar events (list_calendar_events)
    - Tasks (list_tasks)
-4. Be smart about missing information - only ask what's truly needed
-5. When user responds to your questions, USE their answer to complete the task
-6. Combine multiple questions into ONE message
-7. When scheduling with "break time", add at least 1800 seconds (30 mins) between meetings
+5. Be smart about missing information - only ask what's truly needed
+6. When user responds to your questions, USE their answer to complete the task
+7. Combine multiple questions into ONE message
+8. When scheduling with "break time", add at least 1800 seconds (30 mins) between meetings
 
 {history}
 
@@ -193,8 +198,11 @@ Thought:{agent_scratchpad}"""
         Returns:
             AI's response
         """
-        now = datetime.now()
-        current_time = now.strftime("%d/%m/%Y %H:%M")
+        # Use UTC+7 for Vietnam time
+        tz = timezone(timedelta(hours=7))
+        now = datetime.now(tz)
+        # Format: "Sunday, 30/11/2025 00:36 (12:36 AM)"
+        current_time = now.strftime("%A, %d/%m/%Y %H:%M (%I:%M %p)")
         current_timestamp = int(now.timestamp())
 
         # Build conversation history context
