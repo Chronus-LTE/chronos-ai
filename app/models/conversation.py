@@ -17,7 +17,7 @@ class Conversation(Base):
     __tablename__ = "conversations"
 
     id = Column(String(50), primary_key=True, index=True, default=generate_short_id)
-    user_id = Column(Integer, index=True, nullable=False)
+    user_id = Column(String(50), index=True, nullable=False)
 
     # Conversation metadata
     title = Column(String(255), nullable=True)  # Auto-generated from first message
@@ -42,7 +42,7 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(String(50), index=True, nullable=False)
-    user_id = Column(Integer, index=True, nullable=False)
+    user_id = Column(String(50), index=True, nullable=False)
 
     # Message content
     role = Column(String(20), nullable=False)  # user, assistant, system
@@ -68,7 +68,7 @@ class KnowledgeBase(Base):
     __tablename__ = "knowledge_base"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True, nullable=True)  # None = global knowledge
+    user_id = Column(String(50), index=True, nullable=True)  # None = global knowledge
 
     # Document metadata
     title = Column(String(255), nullable=False)

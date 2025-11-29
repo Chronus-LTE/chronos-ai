@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth import get_current_user
 from app.database import get_db
+from app.models.conversation import Conversation
 from app.models.user import User
 from app.services.ai.agent_service import AIAgentService
 from app.services.chat_history import ChatHistoryService
@@ -48,11 +50,23 @@ async def chat(
         # Get or create conversation
         if request.conversation_id:
             # Verify conversation exists and belongs to user
-            history = await chat_service.get_conversation_history(request.conversation_id, limit=1)
-            if not history:
-                # If not found, treat as new conversation or raise error?
-                # For now, let's create a new one if ID is invalid isn't ideal, but let's assume valid ID
-                pass
+            result = await db.execute(
+                select(Conversation).where(Conversation.id == request.conversation_id)
+            )
+            conversation = result.scalar_one_or_none()
+
+            if not conversation:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Conversation not found",
+                )
+
+            if conversation.user_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You don't have permission to access this conversation",
+                )
+
             conversation_id = request.conversation_id
         else:
             conversation = await chat_service.create_conversation()
@@ -114,6 +128,22 @@ async def get_conversation_history(
     db: AsyncSession = Depends(get_db),
 ):
     """Get messages for a specific conversation."""
+    # Verify conversation belongs to current user
+    result = await db.execute(select(Conversation).where(Conversation.id == conversation_id))
+    conversation = result.scalar_one_or_none()
+
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found",
+        )
+
+    if conversation.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to access this conversation",
+        )
+
     chat_service = ChatHistoryService(db, current_user.id)
     return await chat_service.get_conversation_history(conversation_id, limit=limit)
 
@@ -125,6 +155,16 @@ async def search_conversations(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Search conversations using Vector DB."""
+    """Search conversations using Vector DB (only user's own conversations)."""
     chat_service = ChatHistoryService(db, current_user.id)
-    return await chat_service.search_conversations(query, limit=limit)
+    results = await chat_service.search_conversations(query, limit=limit)
+
+    # Verify all results belong to current user (defense in depth)
+    for result in results:
+        if result.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized access to conversation",
+            )
+
+    return results

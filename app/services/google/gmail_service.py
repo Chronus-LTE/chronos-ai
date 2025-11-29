@@ -96,10 +96,18 @@ class GoogleGmailService:
 
             # Parse message details
             headers = message.get("payload", {}).get("headers", [])
-            subject = next((h["value"] for h in headers if h["name"] == "Subject"), "No Subject")
-            from_email = next((h["value"] for h in headers if h["name"] == "From"), "Unknown")
-            to_email = next((h["value"] for h in headers if h["name"] == "To"), "Unknown")
-            date = next((h["value"] for h in headers if h["name"] == "Date"), "Unknown")
+
+            def get_header(name):
+                return next(
+                    (h["value"] for h in headers if h["name"].lower() == name.lower()), None
+                )
+
+            subject = get_header("Subject") or "No Subject"
+            from_email = get_header("From") or "Unknown"
+            to_email = get_header("To") or "Unknown"
+            cc_email = get_header("Cc")
+            bcc_email = get_header("Bcc")
+            date = get_header("Date") or "Unknown"
 
             # Get message body
             body = self._get_message_body(message)
@@ -113,6 +121,8 @@ class GoogleGmailService:
                 "subject": subject,
                 "from": from_email,
                 "to": to_email,
+                "cc": cc_email,
+                "bcc": bcc_email,
                 "date": date,
                 "snippet": message.get("snippet", ""),
                 "body": body,

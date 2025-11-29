@@ -176,11 +176,9 @@ celery_app.conf.beat_schedule = {
     "daily-proactive-analysis": {
         "task": "daily_proactive_analysis",
         "schedule": 3600.0 * 24,  # Every 24 hours
-        # "schedule": crontab(hour=7, minute=0),  # Every day at 7 AM
     },
     "cleanup-old-alerts": {
         "task": "cleanup_old_alerts",
         "schedule": 3600.0 * 24,  # Every 24 hours
-        # "schedule": crontab(hour=0, minute=0),  # Every day at midnight
     },
 }

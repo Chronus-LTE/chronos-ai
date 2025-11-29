@@ -129,7 +129,7 @@ class AuthService:
         return await UserService.create_from_google(db, google_user_info)
 
     @staticmethod
-    async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
+    async def get_user_by_id(db: AsyncSession, user_id: str) -> User | None:
         """Get user by ID."""
         return await UserService.get_by_id(db, user_id)
 

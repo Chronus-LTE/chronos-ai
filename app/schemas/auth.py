@@ -38,7 +38,7 @@ class UserUpdate(BaseModel):
 class UserInDB(UserBase):
     """User schema as stored in database"""
 
-    id: int
+    id: str
     picture: str | None = None
     google_id: str | None = None
     is_active: bool
@@ -67,7 +67,7 @@ class TokenData(BaseModel):
     """Token payload data"""
 
     email: str | None = None
-    user_id: int | None = None
+    user_id: str | None = None
     type: str | None = None
 
 

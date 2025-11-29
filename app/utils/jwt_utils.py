@@ -69,7 +69,7 @@ def verify_token(token: str) -> TokenData | None:
     try:
         payload = decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
-        user_id: int = payload.get("user_id")
+        user_id: str = payload.get("user_id")
         token_type: str = payload.get("type")
 
         if email is None:

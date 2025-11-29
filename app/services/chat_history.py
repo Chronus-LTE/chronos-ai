@@ -14,7 +14,7 @@ from app.services.vector_db import VectorDBService
 class ChatHistoryService:
     """Service for managing chat history with vector DB."""
 
-    def __init__(self, db: AsyncSession, user_id: int):
+    def __init__(self, db: AsyncSession, user_id: str):
         """
         Initialize chat history service.
 

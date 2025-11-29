@@ -4,8 +4,7 @@ Alert model for proactive suggestions.
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 
 from app.database import Base
 
@@ -16,7 +15,7 @@ class Alert(Base):
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, index=True, nullable=False)
+    user_id = Column(String(50), ForeignKey("users.id"), index=True, nullable=False)
 
     # Alert metadata
     type = Column(String(50), nullable=False)  # scheduling, overload, task_reminder, email_followup
