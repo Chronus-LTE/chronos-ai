@@ -2,17 +2,23 @@
 Authentication service for handling OAuth and JWT operations.
 """
 
+import logging
 from datetime import datetime, timezone
 
 import httpx
 from fastapi import HTTPException, status
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.user import User
 from app.schemas.auth import GoogleUserInfo
 from app.services.auth.user_service import UserService
 from app.utils.jwt_utils import verify_token
 from app.utils.security import verify_password
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -201,3 +207,43 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
         return current_user
+
+    @staticmethod
+    async def verify_google_id_token(id_token_str: str) -> GoogleUserInfo | None:
+        """
+        Verify Google ID token from mobile SDK.
+
+        Args:
+            id_token_str: Google ID token from mobile SDK
+
+        Returns:
+            GoogleUserInfo if valid, None otherwise
+        """
+        try:
+            # Verify the token using Google's public certificates
+            idinfo = id_token.verify_oauth2_token(
+                id_token_str,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )
+
+            # Token is valid, extract user info
+            google_user_info = GoogleUserInfo(
+                id=idinfo.get("sub", ""),
+                email=idinfo.get("email", ""),
+                verified_email=idinfo.get("email_verified", False),
+                name=idinfo.get("name"),
+                given_name=idinfo.get("given_name"),
+                family_name=idinfo.get("family_name"),
+                picture=idinfo.get("picture"),
+                locale=idinfo.get("locale"),
+            )
+
+            return google_user_info
+
+        except ValueError as e:
+            logger.error(f"Invalid Google token: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Error verifying Google token: {e}")
+            return None

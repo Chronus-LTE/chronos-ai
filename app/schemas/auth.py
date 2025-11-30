@@ -84,3 +84,10 @@ class GoogleUserInfo(BaseModel):
     locale: str | None = None
     access_token: str | None = None
     refresh_token: str | None = None
+
+
+class GoogleTokenRequest(BaseModel):
+    """Google token verification request from mobile SDK"""
+
+    id_token: str
+    access_token: str | None = None

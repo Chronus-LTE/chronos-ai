@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
-from app.schemas.auth import Token, UserCreate, UserLogin, UserUpdate
+from app.schemas.auth import GoogleTokenRequest, Token, UserCreate, UserLogin, UserUpdate
 from app.schemas.auth import User as UserSchema
 from app.services.auth.auth_service import AuthService
 from app.services.auth.user_service import UserService
@@ -269,6 +269,62 @@ async def google_callback(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing Google callback: {error!s}",
+        ) from error
+
+
+@router.post("/google/verify", response_model=Token)
+async def verify_google_token(
+    token_request: GoogleTokenRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Verify Google ID token from mobile SDK (Flutter, React Native, etc).
+
+    Mobile apps use Google SDK to sign in, which returns an id_token.
+    This endpoint verifies that token and returns a JWT for app use.
+
+    Args:
+        token_request: Google token request with id_token and optional access_token
+        db: Database session
+
+    Returns:
+        Token: JWT access token and user information
+
+    Raises:
+        HTTPException: If token is invalid or verification fails
+    """
+    try:
+        # Verify the Google ID token
+        google_user_info = await AuthService.verify_google_id_token(token_request.id_token)
+
+        if not google_user_info:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired Google token",
+            )
+
+        # Add access token if provided
+        if token_request.access_token:
+            google_user_info.access_token = token_request.access_token
+
+        # Get or create user in database
+        user = await AuthService.get_or_create_user(db, google_user_info)
+
+        # Create JWT tokens for the app
+        access_token = create_access_token(data={"sub": user.email, "user_id": user.id})
+        refresh_token = create_refresh_token(data={"sub": user.email, "user_id": user.id})
+
+        # Convert user to schema
+        user_schema = UserSchema.from_orm(user)
+
+        return Token(access_token=access_token, token_type="bearer", user=user_schema)
+
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error verifying Google token: {error!s}",
         ) from error
 
 
