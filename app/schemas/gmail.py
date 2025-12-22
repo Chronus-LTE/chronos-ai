@@ -102,6 +102,7 @@ class EmailResponse(BaseModel):
     date: datetime
     snippet: str
     body_plain: str | None = None
+    body_html: str | None = None
     labels: list[str] = Field(default_factory=list)
     is_unread: bool = Field(..., alias="isUnread")
     is_starred: bool = Field(..., alias="isStarred")
