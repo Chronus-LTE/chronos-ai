@@ -6,8 +6,11 @@ from datetime import datetime, timezone
 
 import httpx
 from fastapi import HTTPException, status
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.user import User
 from app.schemas.auth import GoogleUserInfo
 from app.services.auth.user_service import UserService
@@ -201,3 +204,40 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
         return current_user
+
+    @staticmethod
+    def verify_google_id_token(id_token: str) -> GoogleUserInfo | None:
+        """
+        Verify Google ID token from mobile SDK.
+
+        Args:
+            id_token: ID token from Google Sign In SDK
+
+        Returns:
+            GoogleUserInfo if valid, None otherwise
+        """
+        try:
+            # Verify the token
+            idinfo = google_id_token.verify_oauth2_token(
+                id_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID
+            )
+
+            # Token is valid
+            return GoogleUserInfo(
+                id=idinfo.get("sub"),
+                email=idinfo.get("email"),
+                verified_email=idinfo.get("email_verified", False),
+                name=idinfo.get("name"),
+                given_name=idinfo.get("given_name"),
+                family_name=idinfo.get("family_name"),
+                picture=idinfo.get("picture"),
+                locale=idinfo.get("locale"),
+            )
+
+        except ValueError:
+            # Invalid token
+            return None
+        except Exception as e:
+            print(f"Error verifying token: {e}")
+            return None
+
