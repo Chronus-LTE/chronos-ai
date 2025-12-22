@@ -26,6 +26,7 @@ class AIAgentService:
         """
         self.user_token = user_token
         self.conversation_history = []
+        self.rag_context = None  # Store RAG-retrieved context
 
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
@@ -205,13 +206,38 @@ Thought:{agent_scratchpad}"""
         current_time = now.strftime("%A, %d/%m/%Y %H:%M (%I:%M %p)")
         current_timestamp = int(now.timestamp())
 
-        # Build conversation history context
+        # Build conversation history context (recent messages)
         history_context = ""
         if self.conversation_history:
-            history_context = "CONVERSATION HISTORY:\n"
-            for i, (msg_type, msg_content) in enumerate(self.conversation_history[-4:], 1):
+            history_context = "RECENT CONVERSATION HISTORY:\n"
+            # Use last 10 messages for immediate context (5 exchanges)
+            for i, (msg_type, msg_content) in enumerate(self.conversation_history[-10:], 1):
                 history_context += f"{i}. {msg_type}: {msg_content}\n"
             history_context += "\n"
+
+        # Build RAG context (semantically relevant messages)
+        rag_context_str = ""
+        if self.rag_context:
+            # Add relevant messages from current conversation
+            if self.rag_context.get("current_conversation"):
+                rag_context_str += "RELEVANT CONTEXT FROM THIS CONVERSATION:\n"
+                rag_context_str += self.rag_context["current_conversation"]
+                rag_context_str += "\n"
+
+            # Add relevant messages from other conversations
+            if self.rag_context.get("related_conversations"):
+                related = self.rag_context["related_conversations"]
+                if related:
+                    rag_context_str += "RELATED CONTEXT FROM PAST CONVERSATIONS:\n"
+                    for i, msg in enumerate(related, 1):
+                        role = msg.get("role", "").capitalize()
+                        content = msg.get("content", "")
+                        score = msg.get("score", 0)
+                        rag_context_str += f"{i}. {role} (relevance: {score:.2f}): {content}\n"
+                    rag_context_str += "\n"
+
+        # Combine all context
+        full_history = rag_context_str + history_context
 
         try:
             response = await self.agent_executor.ainvoke(
@@ -219,7 +245,7 @@ Thought:{agent_scratchpad}"""
                     "input": message,
                     "current_time": current_time,
                     "current_timestamp": current_timestamp,
-                    "history": history_context,
+                    "history": full_history,
                 }
             )
             response_text = response["output"].strip()
