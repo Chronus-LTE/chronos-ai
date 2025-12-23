@@ -65,7 +65,7 @@ class VectorDBService:
     async def add_chat_message(
         self,
         message_id: int,
-        user_id: int,
+        user_id: str,
         conversation_id: int,
         content: str,
         role: str,
@@ -118,7 +118,7 @@ class VectorDBService:
     async def search_chat_history(
         self,
         query: str,
-        user_id: int,
+        user_id: str,
         limit: int = 5,
         conversation_id: int | None = None,
     ) -> list[dict[str, Any]]:
@@ -168,7 +168,7 @@ class VectorDBService:
         knowledge_id: int,
         title: str,
         content: str,
-        user_id: int | None = None,
+        user_id: str | None = None,
         category: str | None = None,
         metadata: dict | None = None,
     ) -> str:
@@ -220,7 +220,7 @@ class VectorDBService:
     async def search_knowledge(
         self,
         query: str,
-        user_id: int | None = None,
+        user_id: str | None = None,
         category: str | None = None,
         limit: int = 5,
     ) -> list[dict[str, Any]]:
@@ -292,7 +292,7 @@ class VectorDBService:
     async def get_relevant_context(
         self,
         query: str,
-        user_id: int,
+        user_id: str,
         max_chat_history: int = 3,
         max_knowledge: int = 2,
     ) -> dict[str, Any]:

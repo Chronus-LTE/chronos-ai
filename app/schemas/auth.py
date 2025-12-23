@@ -38,7 +38,7 @@ class UserUpdate(BaseModel):
 class UserInDB(UserBase):
     """User schema as stored in database"""
 
-    id: int
+    id: str
     picture: str | None = None
     google_id: str | None = None
     is_active: bool
@@ -67,7 +67,8 @@ class TokenData(BaseModel):
     """Token payload data"""
 
     email: str | None = None
-    user_id: int | None = None
+    user_id: str | None = None
+    type: str | None = None
 
 
 class GoogleUserInfo(BaseModel):
@@ -83,3 +84,11 @@ class GoogleUserInfo(BaseModel):
     locale: str | None = None
     access_token: str | None = None
     refresh_token: str | None = None
+
+
+class GoogleTokenRequest(BaseModel):
+    """Google token verification request from mobile SDK"""
+
+    id_token: str
+    access_token: str | None = None
+

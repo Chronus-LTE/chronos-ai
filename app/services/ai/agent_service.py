@@ -3,7 +3,7 @@ AI Agent Service using LangChain and Google Gemini.
 """
 
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.prompts import PromptTemplate
@@ -26,6 +26,7 @@ class AIAgentService:
         """
         self.user_token = user_token
         self.conversation_history = []
+        self.rag_context = None  # Store RAG-retrieved context
 
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
@@ -147,13 +148,18 @@ SCHEDULING RULES:
 2. Calculate timestamps based on Current timestamp:
    - Tomorrow same time = current_timestamp + 86400
    - Next hour = current_timestamp + 3600
-3. When user asks about availability (e.g., "Am I free?", "What's up tomorrow?"), ALWAYS check BOTH:
+3. TIME COMPARISON RULES (CRITICAL):
+   - 00:00 to 11:59 is AM (Morning).
+   - 12:00 to 23:59 is PM (Afternoon/Evening).
+   - If current time is early morning (e.g., 00:30), then 08:00 SAME DAY is IN THE FUTURE (about 7.5 hours later).
+   - DO NOT say "already passed" if the target time is later in the same day.
+4. When user asks about availability (e.g., "Am I free?", "What's up tomorrow?"), ALWAYS check BOTH:
    - Calendar events (list_calendar_events)
    - Tasks (list_tasks)
-4. Be smart about missing information - only ask what's truly needed
-5. When user responds to your questions, USE their answer to complete the task
-6. Combine multiple questions into ONE message
-7. When scheduling with "break time", add at least 1800 seconds (30 mins) between meetings
+5. Be smart about missing information - only ask what's truly needed
+6. When user responds to your questions, USE their answer to complete the task
+7. Combine multiple questions into ONE message
+8. When scheduling with "break time", add at least 1800 seconds (30 mins) between meetings
 
 {history}
 
@@ -193,17 +199,45 @@ Thought:{agent_scratchpad}"""
         Returns:
             AI's response
         """
-        now = datetime.now()
-        current_time = now.strftime("%d/%m/%Y %H:%M")
+        # Use UTC+7 for Vietnam time
+        tz = timezone(timedelta(hours=7))
+        now = datetime.now(tz)
+        # Format: "Sunday, 30/11/2025 00:36 (12:36 AM)"
+        current_time = now.strftime("%A, %d/%m/%Y %H:%M (%I:%M %p)")
         current_timestamp = int(now.timestamp())
 
-        # Build conversation history context
+        # Build conversation history context (recent messages)
         history_context = ""
         if self.conversation_history:
-            history_context = "CONVERSATION HISTORY:\n"
-            for i, (msg_type, msg_content) in enumerate(self.conversation_history[-4:], 1):
+            history_context = "RECENT CONVERSATION HISTORY:\n"
+            # Use last 10 messages for immediate context (5 exchanges)
+            for i, (msg_type, msg_content) in enumerate(self.conversation_history[-10:], 1):
                 history_context += f"{i}. {msg_type}: {msg_content}\n"
             history_context += "\n"
+
+        # Build RAG context (semantically relevant messages)
+        rag_context_str = ""
+        if self.rag_context:
+            # Add relevant messages from current conversation
+            if self.rag_context.get("current_conversation"):
+                rag_context_str += "RELEVANT CONTEXT FROM THIS CONVERSATION:\n"
+                rag_context_str += self.rag_context["current_conversation"]
+                rag_context_str += "\n"
+
+            # Add relevant messages from other conversations
+            if self.rag_context.get("related_conversations"):
+                related = self.rag_context["related_conversations"]
+                if related:
+                    rag_context_str += "RELATED CONTEXT FROM PAST CONVERSATIONS:\n"
+                    for i, msg in enumerate(related, 1):
+                        role = msg.get("role", "").capitalize()
+                        content = msg.get("content", "")
+                        score = msg.get("score", 0)
+                        rag_context_str += f"{i}. {role} (relevance: {score:.2f}): {content}\n"
+                    rag_context_str += "\n"
+
+        # Combine all context
+        full_history = rag_context_str + history_context
 
         try:
             response = await self.agent_executor.ainvoke(
@@ -211,10 +245,10 @@ Thought:{agent_scratchpad}"""
                     "input": message,
                     "current_time": current_time,
                     "current_timestamp": current_timestamp,
-                    "history": history_context,
+                    "history": full_history,
                 }
             )
-            response_text = response["output"]
+            response_text = response["output"].strip()
 
             # Store in conversation history
             self.conversation_history.append(("User", message))
