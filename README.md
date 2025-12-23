@@ -1,458 +1,439 @@
-# 🤖 Chronus AI - Your Personal AI Assistant
+# Chronus AI Backend
 
-## **Chronus AI** is an intelligent personal assistant that helps you manage your calendar, tasks, and emails using AI-powered automation and proactive suggestions.
+A powerful FastAPI backend providing Gmail integration, Google Calendar sync, and AI-powered features for the Chronus productivity suite.
 
-## ✨ Features
+## 🌟 Features
 
-### 📅 Calendar Integration
+### 📧 Gmail Integration
 
-- Sync with Google Calendar
-- Smart event reminders (5-10 minutes before)
-- Analyze free time slots for side projects
-- Auto-create events from natural language
-- Conflict detection and overload warnings
+- **Full Gmail Sync**: Initial and incremental sync with history tracking
+- **Email Operations**: Read, send, delete, star, mark read/unread
+- **Advanced Search**: Search emails with Gmail query syntax
+- **Label Management**: Support for Gmail labels and folders
+- **Attachment Handling**: Download and manage email attachments
+- **Batch Operations**: Efficient bulk email processing
 
-### ✅ Task Management
+### 📅 Google Calendar
 
-- Integration with Google Tasks
-- Voice and chat-based task creation
-- Priority management by deadline and project
-- Sync tasks with calendar
-- Daily task overview with priorities
+- **Calendar Sync**: Sync events from Google Calendar
+- **Event Management**: Create, update, delete calendar events
+- **Multiple Calendars**: Support for multiple calendar sources
 
-### 📧 Email Intelligence ✅
+### 🤖 AI Features
 
-- **Gmail integration** (read, send, search, manage)
-- Read and list emails with natural language
-- Search emails using Gmail search syntax
-- Send emails through AI agent or API
-- Mark emails as read/unread
-- Get unread count and email summaries
-- Auto-extract action items from emails (coming soon)
-- Follow-up reminders for unanswered emails (coming soon)
+- **Proactive Analysis**: AI-powered email and calendar insights
+- **Smart Suggestions**: Context-aware recommendations
+- **Background Tasks**: Celery-based async processing
 
-### 🧠 Memory & Habits
+### 🔐 Authentication
 
-- Learn your preferences and habits
-- Track weekly/monthly progress
-- Context-aware suggestions
-- Semantic search across tasks and emails
-
-### 🎯 Proactive Suggestions
-
-- Smart scheduling recommendations
-- Workload balancing
-- Habit tracking and reminders
-
----
-
-## 🏗️ Tech Stack
-
-### Backend
-
-- **Python 3.11+** - Core language
-- **FastAPI** - Modern async web framework
-- **SQLAlchemy** - ORM for PostgreSQL
-- **PostgreSQL** - Primary database
-- **Redis** - Caching and message queue
-- **Celery** - Background task processing
-
-### AI & Vector Database
-
-- **Google Gemini API** - Large Language Model
-- **Qdrant** - Vector database for semantic search
-- **sentence-transformers** - Text embeddings
-
-### Integrations
-
-- **Google Calendar API**
-- **Google Tasks API**
-- **Gmail API**
-
----
+- **Google OAuth 2.0**: Secure authentication with Google
+- **JWT Tokens**: Stateless authentication
+- **Refresh Token Management**: Automatic token refresh
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Docker & Docker Compose** (Required)
-- Google Cloud Project with APIs enabled
-- Gemini API key
+- **Python**: 3.11 or higher
+- **PostgreSQL**: 14 or higher
+- **Redis**: 6 or higher (for Celery)
+- **Google Cloud Project**: With OAuth 2.0 credentials
 
-**Note**: You DON'T need to install Python, PostgreSQL, or Redis locally! Everything runs in Docker! 🐳
+### Installation
 
-### 3 Simple Steps
+1. **Clone the repository**
 
-```bash
-# 1. Setup environment
-cp .env.example .env
-# Edit .env and add your API keys
+   ```bash
+   cd chronus-ai
+   ```
 
-# 2. Start everything
-./scripts/docker-start.sh
+2. **Create virtual environment**
 
-# Or using Make
-make dev
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-# 3. Done! Visit http://localhost:8000/docs
-```
+3. **Install dependencies**
 
-**That's it!** All services are now running! 🎉
+   ```bash
+   pip install -r requirements.txt
+   ```
 
----
+4. **Set up environment variables**
 
-## 🌐 Access Points
+   Create `.env` file:
 
-Once running, you'll have:
+   ```env
+   # Database
+   DATABASE_URL=postgresql://user:password@localhost:5432/chronus
 
-- **API**: http://localhost:8000
-- **API Docs (Swagger)**: http://localhost:8000/docs
-- **API Docs (ReDoc)**: http://localhost:8000/redoc
-- **Qdrant Dashboard**: http://localhost:6333/dashboard
-- **Flower (Celery Monitor)**: http://localhost:5555
+   # Google OAuth
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
 
----
+   # JWT
+   SECRET_KEY=your-secret-key-here
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+   # Redis (for Celery)
+   REDIS_URL=redis://localhost:6379/0
+
+   # AI (Optional)
+   OPENAI_API_KEY=your-openai-key
+   ```
+
+5. **Set up database**
+
+   ```bash
+   # Create database
+   createdb chronus
+
+   # Run migrations
+   alembic upgrade head
+   ```
+
+6. **Run the server**
+
+   ```bash
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+7. **Run Celery worker** (in separate terminal)
+   ```bash
+   celery -A app.tasks worker --loglevel=info
+   ```
 
 ## 📁 Project Structure
 
 ```
-chronus-ai/
-├── 📄 README.md                    # This file
-├── 📄 requirements.txt             # Python dependencies
-├── 📄 docker-compose.yml           # Docker services
-├── 📄 Dockerfile                   # Container image
-├── 📄 Makefile                     # Quick commands
-├── 📄 alembic.ini                  # Migration config
-├── 🔒 .env.example                 # Environment template
-│
-├── 📚 docs/                        # Documentation
-│   ├── DOCKER_GUIDE.md             # Complete Docker guide
-│   ├── QUICKSTART.md               # Quick setup guide
-│   ├── TECH_STACK.md               # Tech stack details
-│   ├── ARCHITECTURE.md             # System architecture
-│   └── PROJECT_SETUP.md            # Setup summary
-│
-├── 🔧 scripts/                     # Utility scripts
-│   ├── docker-start.sh             # Start all services
-│   ├── docker-stop.sh              # Stop all services
-│   ├── docker-logs.sh              # View logs
-│   └── setup.sh                    # Local Python setup
-│
-├── 📦 app/                         # Main application
-│   ├── main.py                     # FastAPI entry point
-│   ├── config.py                   # Settings
-│   ├── database.py                 # DB connection
-│   │
-│   ├── models/                     # SQLAlchemy models
-│   ├── schemas/                    # Pydantic schemas
-│   │
-│   ├── api/                        # API endpoints
-│   │   └── v1/                     # API version 1
-│   │
-│   ├── services/                   # Business logic
-│   │   ├── google/                 # Google APIs
-│   │   └── ai/                     # AI services
-│   │
-│   ├── tasks/                      # Celery tasks
-│   └── utils/                      # Utilities
-│
-├── 🗄️ alembic/                     # Database migrations
-│   ├── env.py                      # Alembic config
-│   └── versions/                   # Migration files
-│
-└── 🧪 tests/                       # Test suite
-    ├── conftest.py                 # Pytest config
-    └── test_main.py                # Example tests
+app/
+├── api/
+│   └── v1/
+│       ├── auth.py          # Authentication endpoints
+│       ├── gmail.py         # Gmail API endpoints
+│       └── calendar.py      # Calendar endpoints
+├── models/
+│   ├── user.py             # User model
+│   ├── email.py            # Email models
+│   └── alert.py            # Alert models
+├── schemas/
+│   ├── auth.py             # Auth schemas
+│   ├── gmail.py            # Gmail schemas
+│   └── __init__.py
+├── services/
+│   ├── auth/               # Authentication services
+│   ├── google/             # Google API services
+│   ├── ai/                 # AI services
+│   └── email_sync_service.py
+├── tasks/
+│   ├── gmail_sync_tasks.py # Celery tasks for Gmail
+│   └── proactive_tasks.py  # AI analysis tasks
+├── utils/
+│   └── jwt_utils.py        # JWT utilities
+├── database.py             # Database configuration
+└── main.py                 # FastAPI application
 ```
 
----
+## 🔧 API Endpoints
 
-## 📚 Documentation
+### Authentication
 
-| Document                                          | Description                                             |
-| ------------------------------------------------- | ------------------------------------------------------- |
-| [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md)           | **⭐ Complete Docker guide** - All commands & workflows |
-| [GMAIL_INTEGRATION.md](docs/GMAIL_INTEGRATION.md) | **📧 Gmail Integration** - API endpoints & AI usage     |
-| [QUICKSTART.md](docs/QUICKSTART.md)               | Quick setup guide with step-by-step instructions        |
-| [TECH_STACK.md](docs/TECH_STACK.md)               | Detailed tech stack and architecture decisions          |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md)           | System architecture diagrams and data flows             |
-| [PROJECT_SETUP.md](docs/PROJECT_SETUP.md)         | Setup completion summary and quick reference            |
-
----
-
-## 🛠️ Quick Commands
-
-### Using Scripts
-
-```bash
-# Start all services
-./scripts/docker-start.sh
-
-# Stop all services
-./scripts/docker-stop.sh
-
-# View logs
-./scripts/docker-logs.sh
+```
+POST   /api/v1/auth/register          # Register new user
+POST   /api/v1/auth/login             # Login with email/password
+POST   /api/v1/auth/google/mobile     # Google Sign-In (mobile)
+GET    /api/v1/auth/me                # Get current user
 ```
 
-### Using Make (Recommended)
+### Gmail
+
+```
+# Sync
+POST   /api/v1/gmail/sync             # Start email sync
+GET    /api/v1/gmail/sync/status      # Get sync status
+
+# Emails
+GET    /api/v1/gmail/emails           # List emails (with filters)
+GET    /api/v1/gmail/emails/{id}      # Get email detail
+GET    /api/v1/gmail/search           # Search emails
+POST   /api/v1/gmail/send             # Send email
+DELETE /api/v1/gmail/emails/{id}      # Delete email
+
+# Actions
+POST   /api/v1/gmail/emails/{id}/mark-read    # Mark as read
+POST   /api/v1/gmail/emails/{id}/mark-unread  # Mark as unread
+POST   /api/v1/gmail/emails/{id}/star         # Star email
+POST   /api/v1/gmail/emails/{id}/unstar       # Unstar email
+
+# Metadata
+GET    /api/v1/gmail/unread-count     # Get unread count
+```
+
+### Calendar
+
+```
+GET    /api/v1/calendar/events        # List calendar events
+POST   /api/v1/calendar/events        # Create event
+PUT    /api/v1/calendar/events/{id}   # Update event
+DELETE /api/v1/calendar/events/{id}   # Delete event
+```
+
+## 🗄️ Database Schema
+
+### Users Table
+
+```sql
+- id (string, primary key)
+- email (string, unique)
+- name (string)
+- google_access_token (string)
+- google_refresh_token (string)
+- created_at (timestamp)
+```
+
+### Emails Table
+
+```sql
+- id (integer, primary key)
+- gmail_id (string, unique)
+- thread_id (string)
+- user_id (string, foreign key)
+- subject (string)
+- from_email (string)
+- to_email (string)
+- body_html (text)
+- body_plain (text)
+- date (timestamp)
+- labels (jsonb array)
+- is_unread (boolean)
+- is_starred (boolean)
+- has_attachments (boolean)
+```
+
+### Gmail Sync State Table
+
+```sql
+- id (integer, primary key)
+- user_id (string, unique)
+- status (string)
+- sync_type (string)
+- total_messages (integer)
+- synced_messages (integer)
+- history_id (string)
+- last_sync_date (timestamp)
+```
+
+## 🔐 Google OAuth Setup
+
+1. **Create Google Cloud Project**
+
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create new project
+
+2. **Enable APIs**
+
+   - Gmail API
+   - Google Calendar API
+   - Google Tasks API
+
+3. **Create OAuth 2.0 Credentials**
+
+   - Application type: Web application
+   - Authorized redirect URIs:
+     - `http://localhost:8000/api/v1/auth/google/callback`
+     - Your production domain
+
+4. **Configure Consent Screen**
+
+   - Add required scopes
+   - Add test users (for development)
+
+5. **Download credentials**
+   - Save client ID and client secret to `.env`
+
+## 🏗️ Architecture
+
+### Design Patterns
+
+- **Repository Pattern**: Service layer for business logic
+- **Dependency Injection**: FastAPI dependencies
+- **Background Tasks**: Celery for async processing
+
+### Database
+
+- **PostgreSQL**: Primary database
+- **SQLAlchemy**: ORM
+- **Alembic**: Database migrations
+
+### Caching & Queue
+
+- **Redis**: Celery broker and result backend
+
+### Performance Optimizations
+
+- **Incremental Sync**: Only sync new/changed emails
+- **Batch Processing**: Process emails in batches
+- **Database Indexing**: Optimized queries
+- **Connection Pooling**: Reuse database connections
+
+## 🧪 Testing
 
 ```bash
-# Show all available commands
-make help
-
-# Start development environment
-make dev
-
-# Start services
-make up
-
-# Stop services
-make down
-
-# View logs
-make logs
-
-# Check status
-make status
-
-# Run migrations
-make migrate
-
 # Run tests
-make test
+pytest
 
-# Open shell in API container
-make shell
+# Run with coverage
+pytest --cov=app --cov-report=html
 
-# Format code
-make format
+# Run specific test file
+pytest tests/test_gmail.py
 ```
 
-See [Makefile](Makefile) for all available commands.
+## 🚀 Deployment
 
----
+### Using Docker
 
-## 🐳 Docker Services
+```bash
+# Build image
+docker build -t chronus-ai .
 
-Your `docker-compose.yml` includes:
+# Run container
+docker run -p 8000:8000 --env-file .env chronus-ai
+```
 
-| Service           | Port | Description            |
-| ----------------- | ---- | ---------------------- |
-| **postgres**      | 5432 | PostgreSQL database    |
-| **redis**         | 6379 | Redis cache & queue    |
-| **qdrant**        | 6333 | Vector database        |
-| **api**           | 8000 | FastAPI application    |
-| **celery-worker** | -    | Background task worker |
-| **celery-beat**   | -    | Task scheduler         |
-| **flower**        | 5555 | Celery monitoring      |
+### Using Docker Compose
 
 ```bash
 # Start all services
 docker-compose up -d
 
-# Check status
-docker-compose ps
-
 # View logs
 docker-compose logs -f
 
-# Stop all services
+# Stop services
 docker-compose down
 ```
 
----
+### Production Checklist
 
-## 🔧 Configuration
+- [ ] Set strong `SECRET_KEY`
+- [ ] Use production database
+- [ ] Enable HTTPS
+- [ ] Set up proper CORS
+- [ ] Configure rate limiting
+- [ ] Set up monitoring (Sentry, etc.)
+- [ ] Enable database backups
+- [ ] Use environment-specific configs
 
-### Google Cloud Setup
+## 📊 Monitoring
 
-1. **Create a Google Cloud Project**
-
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project
-
-2. **Enable APIs**
-
-   - Google Calendar API
-   - Google Tasks API
-   - Gmail API
-
-3. **Create OAuth 2.0 Credentials**
-   - Go to "APIs & Services" > "Credentials"
-   - Create OAuth 2.0 Client ID
-   - Add authorized redirect URI: `http://localhost:8000/api/v1/auth/google/callback`
-   - Download credentials and update `.env`
-
-### Gemini API Setup
-
-1. Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Add to `.env`: `GEMINI_API_KEY=your-key-here`
-
-### Environment Variables
-
-Edit `.env` file:
+### Health Check
 
 ```bash
-# Google OAuth
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-client-secret
-
-# Gemini API
-GEMINI_API_KEY=your-gemini-api-key
-
-# Security (generate a random string)
-SECRET_KEY=your-secret-key-here
+curl http://localhost:8000/health
 ```
 
----
+### Metrics
 
-## 🧪 Testing
-
-```bash
-# Run all tests
-make test
-
-# Run with coverage
-make test-cov
-
-# Run specific test file
-docker-compose exec api pytest tests/test_main.py
-```
-
----
-
-## 🛣️ Roadmap
-
-### Phase 1: MVP ✅
-
-- [x] Project setup
-- [x] Docker configuration
-- [x] Google Calendar integration
-- [x] Gmail integration (read, send, search, manage)
-- [ ] Google Tasks integration
-- [ ] Basic AI chat with Gemini
-- [ ] Vector store for memory
-
-### Phase 2: Intelligence
-
-- [ ] Proactive suggestions
-- [ ] Habit tracking
-- [ ] Email intelligence
-- [ ] Smart scheduling
-
-### Phase 3: Advanced
-
-- [ ] Voice interface
-- [ ] Mobile app
-- [ ] Self-hosting option
-- [ ] Advanced analytics
-
----
+- API response times
+- Database query performance
+- Celery task queue length
+- Email sync success rate
 
 ## 🐛 Troubleshooting
 
-### Services won't start?
+### Common Issues
+
+**Database connection errors**
 
 ```bash
-# Check Docker is running
-docker info
+# Check PostgreSQL is running
+pg_isready
 
-# Check logs
-make logs
-
-# Restart services
-make restart
+# Check connection string
+echo $DATABASE_URL
 ```
 
-### Port already in use?
+**Google OAuth errors**
+
+- Verify client ID and secret
+- Check redirect URIs match
+- Ensure APIs are enabled
+
+**Celery tasks not running**
 
 ```bash
-# Find process using port
-lsof -i :8000
+# Check Redis is running
+redis-cli ping
 
-# Kill process
-kill -9 <PID>
+# Check Celery worker
+celery -A app.tasks inspect active
 ```
 
-### Database connection error?
+**Email sync fails**
 
-```bash
-# Restart PostgreSQL
-docker-compose restart postgres
+- Check Google API quotas
+- Verify refresh token is valid
+- Check user has granted permissions
 
-# Check logs
-docker-compose logs postgres
-```
+## 📦 Dependencies
 
-### Need fresh start?
+### Core
 
-```bash
-# Remove everything including data
-make clean
+- `fastapi` - Web framework
+- `uvicorn` - ASGI server
+- `sqlalchemy` - ORM
+- `alembic` - Database migrations
+- `pydantic` - Data validation
 
-# Start fresh
-make dev
-```
+### Google APIs
 
-See [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md) for more troubleshooting tips.
+- `google-auth` - Google authentication
+- `google-api-python-client` - Google API client
 
----
+### Background Tasks
+
+- `celery` - Task queue
+- `redis` - Message broker
+
+### Database
+
+- `psycopg2-binary` - PostgreSQL adapter
+- `asyncpg` - Async PostgreSQL
+
+### AI (Optional)
+
+- `openai` - OpenAI API client
+- `langchain` - LLM framework
+
+## 🔒 Security
+
+- JWT-based authentication
+- Password hashing with bcrypt
+- CORS protection
+- Rate limiting
+- SQL injection prevention (SQLAlchemy)
+- XSS protection
+
+## 📄 License
+
+MIT License
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create feature branch
+3. Write tests
+4. Submit pull request
+
+## 🔗 Related Repositories
+
+- [Chronos Mobile](../chronos-mobile) - Flutter mobile app
+- [Chronus Web App](../chronus-webapp) - Angular web app
 
 ---
 
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) file for details
-
----
-
-## 👤 Author
-
-**Huy Phan**
-**Hoang Nguyen**
-
----
-
-## 🙏 Acknowledgments
-
-- Google Gemini API
-- FastAPI framework
-- Qdrant vector database
-- Open source community
-
----
-
-## 📞 Support
-
-For issues and questions:
-
-- 📖 Check [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md)
-- 🐛 Open an issue on GitHub
-- 💬 Start a discussion
-
----
-
-## 🎯 Next Steps
-
-1. ✅ Read [DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md) for complete Docker guide
-2. ✅ Configure your `.env` file with API keys
-3. ✅ Run `make dev` to start all services
-4. ✅ Visit http://localhost:8000/docs to explore the API
-5. ⏳ Start implementing features!
-
----
-
-**Built with ❤️ for personal productivity**
-
-🚀 **Ready to start?** Run `make dev` and visit http://localhost:8000/docs
+**Built with FastAPI and ❤️**
