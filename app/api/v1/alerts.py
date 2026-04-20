@@ -2,7 +2,7 @@
 Alerts API endpoints for proactive suggestions.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -17,9 +17,7 @@ from app.models.user import User
 router = APIRouter(prefix="/alerts", tags=["Alerts"])
 
 
-# ============================================================================
 # MODELS
-# ============================================================================
 
 
 class AlertResponse(BaseModel):
@@ -57,9 +55,7 @@ class AlertActionRequest(BaseModel):
     action: str  # read, dismiss, action
 
 
-# ============================================================================
 # ENDPOINTS
-# ============================================================================
 
 
 @router.get("/", response_model=AlertListResponse)
@@ -178,7 +174,7 @@ async def mark_alert_as_read(
             )
 
         alert.is_read = True
-        alert.read_at = datetime.utcnow()
+        alert.read_at = datetime.now(timezone.utc)
         await db.commit()
 
         return {"message": "Alert marked as read", "id": alert_id}
@@ -215,7 +211,7 @@ async def dismiss_alert(
             )
 
         alert.is_dismissed = True
-        alert.dismissed_at = datetime.utcnow()
+        alert.dismissed_at = datetime.now(timezone.utc)
         await db.commit()
 
         return {"message": "Alert dismissed", "id": alert_id}
@@ -252,9 +248,9 @@ async def mark_alert_actioned(
             )
 
         alert.is_actioned = True
-        alert.actioned_at = datetime.utcnow()
+        alert.actioned_at = datetime.now(timezone.utc)
         alert.is_read = True
-        alert.read_at = datetime.utcnow()
+        alert.read_at = datetime.now(timezone.utc)
         await db.commit()
 
         return {"message": "Alert marked as actioned", "id": alert_id}

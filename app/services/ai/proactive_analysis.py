@@ -90,7 +90,7 @@ class ProactiveAnalysisService:
         today = now.strftime("%Y-%m-%d")
         tomorrow = (now + timedelta(days=1)).strftime("%Y-%m-%d")
 
-        prompt = f"""You are an AI assistant analyzing a user's schedule to provide proactive suggestions.
+        return f"""You are an AI assistant analyzing a user's schedule to provide proactive suggestions.
 
 Current Date: {today}
 Analysis Period: Today ({today}) and Tomorrow ({tomorrow})
@@ -157,8 +157,6 @@ Return ONLY a valid JSON object with this exact structure:
 - If no suggestions needed, return: {{"suggestions": []}}
 
 Generate suggestions now:"""
-
-        return prompt
 
     def detect_schedule_gaps(self, calendar_events: list[dict]) -> list[dict]:
         """

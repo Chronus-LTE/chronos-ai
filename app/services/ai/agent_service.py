@@ -202,7 +202,6 @@ Thought:{agent_scratchpad}"""
         # Use UTC+7 for Vietnam time
         tz = timezone(timedelta(hours=7))
         now = datetime.now(tz)
-        # Format: "Sunday, 30/11/2025 00:36 (12:36 AM)"
         current_time = now.strftime("%A, %d/%m/%Y %H:%M (%I:%M %p)")
         current_timestamp = int(now.timestamp())
 

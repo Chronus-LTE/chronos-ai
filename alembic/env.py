@@ -13,7 +13,13 @@ from alembic import context
 # Import your models and config
 from app.config import settings
 from app.database import Base
-from app.models import *  # Import all models
+from app.models.alert import Alert
+from app.models.conversation import Conversation, KnowledgeBase, Message
+from app.models.email import Email
+from app.models.user import User
+
+# Keep explicit references so Alembic sees all models in metadata.
+ALL_MODELS = (User, Alert, Email, Conversation, Message, KnowledgeBase)
 
 # this is the Alembic Config object
 config = context.config

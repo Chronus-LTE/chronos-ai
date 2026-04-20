@@ -27,7 +27,6 @@ class Conversation(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Metadata (JSON)
     meta_data = Column(JSONB, nullable=True)  # Store context, tags, etc.
 
     def __repr__(self):
@@ -86,7 +85,6 @@ class KnowledgeBase(Base):
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Metadata (JSON)
     meta_data = Column(JSONB, nullable=True)
 
     def __repr__(self):

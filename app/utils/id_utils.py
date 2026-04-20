@@ -3,7 +3,7 @@ ID generation utilities
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def generate_short_id(separator: str = "-") -> str:
@@ -18,7 +18,7 @@ def generate_short_id(separator: str = "-") -> str:
         Short ID string
     """
     # Convert current timestamp to hex (10 chars)
-    timestamp_hex = format(int(datetime.utcnow().timestamp() * 1000), "x")[:8]
+    timestamp_hex = format(int(datetime.now(timezone.utc).timestamp() * 1000), "x")[:8]
 
     # Generate random UUID and take first 6 chars
     random_part = str(uuid.uuid4()).replace("-", "")[:6]

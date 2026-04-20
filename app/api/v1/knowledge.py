@@ -16,11 +16,6 @@ from app.services.vector_db import VectorDBService
 router = APIRouter(prefix="/knowledge", tags=["Knowledge Base"])
 
 
-# ============================================================================
-# MODELS
-# ============================================================================
-
-
 class CreateKnowledgeRequest(BaseModel):
     """Request model for creating knowledge."""
 
@@ -28,7 +23,7 @@ class CreateKnowledgeRequest(BaseModel):
     content: str
     source: str | None = None
     category: str | None = None
-    is_global: bool = False  # If True, available to all users
+    is_global: bool = False
 
 
 class UpdateKnowledgeRequest(BaseModel):
@@ -54,8 +49,6 @@ class KnowledgeResponse(BaseModel):
     updated_at: str
 
     class Config:
-        """Pydantic config."""
-
         from_attributes = True
 
 
@@ -66,12 +59,7 @@ class SearchKnowledgeResponse(BaseModel):
     title: str
     content: str
     category: str | None = None
-    score: float  # Similarity score
-
-
-# ============================================================================
-# ENDPOINTS
-# ============================================================================
+    score: float
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -82,7 +70,6 @@ async def create_knowledge(
 ):
     """Create a new knowledge base entry."""
     try:
-        # Create knowledge in DB
         knowledge = KnowledgeBase(
             user_id=None if request.is_global else current_user.id,
             title=request.title,
@@ -94,7 +81,6 @@ async def create_knowledge(
         await db.commit()
         await db.refresh(knowledge)
 
-        # Add to vector DB
         vector_db = VectorDBService()
         vector_id = await vector_db.add_knowledge(
             knowledge_id=knowledge.id,
@@ -130,11 +116,9 @@ async def list_knowledge(
 ):
     """List knowledge base entries."""
     try:
-        # Build query
         conditions = []
 
         if include_global:
-            # Include both user's and global knowledge
             conditions.append(
                 (KnowledgeBase.user_id == current_user.id) | (KnowledgeBase.user_id.is_(None))
             )
@@ -146,7 +130,6 @@ async def list_knowledge(
 
         conditions.append(KnowledgeBase.is_active == 1)
 
-        # Execute query
         result = await db.execute(
             select(KnowledgeBase)
             .where(*conditions)
@@ -261,7 +244,6 @@ async def update_knowledge(
                 detail="Knowledge not found or you don't have permission",
             )
 
-        # Update fields
         if request.title is not None:
             knowledge.title = request.title
         if request.content is not None:
@@ -273,18 +255,15 @@ async def update_knowledge(
         if request.is_active is not None:
             knowledge.is_active = 1 if request.is_active else 0
 
-        # Update vector DB if content changed
         if request.title is not None or request.content is not None:
             vector_db = VectorDBService()
 
-            # Delete old vector
             if knowledge.vector_id:
                 vector_db.delete_vector(
                     collection_name=vector_db.KNOWLEDGE_COLLECTION,
                     vector_id=knowledge.vector_id,
                 )
 
-            # Add new vector
             vector_id = await vector_db.add_knowledge(
                 knowledge_id=knowledge.id,
                 title=knowledge.title,
@@ -329,7 +308,6 @@ async def delete_knowledge(
                 detail="Knowledge not found or you don't have permission",
             )
 
-        # Delete from vector DB
         if knowledge.vector_id:
             vector_db = VectorDBService()
             vector_db.delete_vector(
@@ -337,7 +315,6 @@ async def delete_knowledge(
                 vector_id=knowledge.vector_id,
             )
 
-        # Delete from DB
         await db.delete(knowledge)
         await db.commit()
 

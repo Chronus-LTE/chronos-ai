@@ -323,9 +323,7 @@ class GoogleGmailService:
             msg = f"Failed to get unread count: {e!s}"
             raise RuntimeError(msg) from e
 
-    # ============================================================================
     # DRAFT MANAGEMENT (like Notion/Lark)
-    # ============================================================================
 
     def create_draft(
         self,
@@ -500,9 +498,7 @@ class GoogleGmailService:
             msg = f"Failed to delete draft: {e!s}"
             raise RuntimeError(msg) from e
 
-    # ============================================================================
     # THREADING & CONVERSATION (like Notion/Lark)
-    # ============================================================================
 
     def get_thread(self, thread_id: str):
         """
@@ -593,9 +589,7 @@ class GoogleGmailService:
             msg = f"Failed to reply to thread: {e!s}"
             raise RuntimeError(msg) from e
 
-    # ============================================================================
     # ADVANCED FEATURES (like Notion/Lark)
-    # ============================================================================
 
     def star_message(self, message_id: str):
         """Star/favorite a message."""

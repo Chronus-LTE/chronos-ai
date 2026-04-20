@@ -2,7 +2,7 @@
 Chat History Service with Vector DB integration.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -109,7 +109,7 @@ class ChatHistoryService:
         )
         conversation = result.scalar_one_or_none()
         if conversation:
-            conversation.updated_at = datetime.utcnow()
+            conversation.updated_at = datetime.now(timezone.utc)
 
             # Auto-generate title from first user message
             if not conversation.title and role == "user":

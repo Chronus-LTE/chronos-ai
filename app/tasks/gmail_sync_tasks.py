@@ -61,7 +61,7 @@ def initial_gmail_sync(self, user_id: str, max_messages: int = 100):
     except Exception as e:
         logger.error(f"Initial sync failed for user {user_id}: {e}")
         # Retry with exponential backoff
-        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries)) from e
 
     finally:
         db.close()
@@ -107,7 +107,7 @@ def incremental_gmail_sync(self, user_id: str):
     except Exception as e:
         logger.error(f"Incremental sync failed for user {user_id}: {e}")
         # Retry with exponential backoff
-        raise self.retry(exc=e, countdown=30 * (2**self.request.retries))
+        raise self.retry(exc=e, countdown=30 * (2**self.request.retries)) from e
 
     finally:
         db.close()
@@ -157,7 +157,7 @@ def sync_single_email(self, user_id: str, gmail_message_id: str):
     except Exception as e:
         logger.error(f"Failed to sync email {gmail_message_id} for user {user_id}: {e}")
         # Retry with exponential backoff
-        raise self.retry(exc=e, countdown=10 * (2**self.request.retries))
+        raise self.retry(exc=e, countdown=10 * (2**self.request.retries)) from e
 
     finally:
         db.close()
@@ -230,7 +230,7 @@ def handle_gmail_webhook(self, user_id: str, history_id: str):
 
     except Exception as e:
         logger.error(f"Webhook processing failed for user {user_id}: {e}")
-        raise self.retry(exc=e, countdown=10 * (2**self.request.retries))
+        raise self.retry(exc=e, countdown=10 * (2**self.request.retries)) from e
 
     finally:
         db.close()

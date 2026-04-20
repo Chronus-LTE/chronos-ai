@@ -2,6 +2,8 @@
 Celery tasks for Chronus AI.
 """
 
+import importlib
+
 from celery import Celery
 from celery.schedules import crontab
 
@@ -45,4 +47,4 @@ celery_app.conf.beat_schedule = {
 celery_app.autodiscover_tasks(["app.tasks"])
 
 # Import tasks to ensure they're registered
-from app.tasks import gmail_sync_tasks  # noqa: F401, E402
+importlib.import_module("app.tasks.gmail_sync_tasks")
